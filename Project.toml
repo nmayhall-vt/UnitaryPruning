@@ -1,0 +1,4 @@
+name = "UnitaryPruning"
+uuid = "944e96c2-c6c9-4ba0-b69d-e026960c3e5f"
+authors = ["Nick Mayhall <nmayhall@vt.edu>"]
+version = "0.1.0"
