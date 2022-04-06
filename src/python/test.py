@@ -10,6 +10,9 @@ import scipy
 import pyscf
 from pyscf import tools
 
+#import pickle
+import numpy as np
+
 def test():
     r = 1.5
     geometry = [('H', (0,0,1*r)), 
@@ -71,6 +74,9 @@ def test():
 
     [e, v, params, ansatz_ops] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1)
 
+   
+    np.save("params.npy", params)
+    np.save("ansatz_ops.npy", ansatz_ops)
     
     print(" Final ADAPT-VQE energy: %12.8f" %e)
     print(" <S^2> of final state  : %12.8f" %(v.conj().T.dot(s2.dot(v))[0,0].real))
