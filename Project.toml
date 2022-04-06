@@ -2,3 +2,9 @@ name = "UnitaryPruning"
 uuid = "944e96c2-c6c9-4ba0-b69d-e026960c3e5f"
 authors = ["Nick Mayhall <nmayhall@vt.edu>"]
 version = "0.1.0"
+
+[deps]
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
