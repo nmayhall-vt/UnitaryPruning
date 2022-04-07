@@ -36,3 +36,15 @@ function commute(ps1::PauliString{N}, ps2::PauliString{N}) where N
     end
     return iseven(n_noncomm)
 end
+
+"""
+    commutator(ps1::PauliString{N}, ps2::PauliString{N})
+"""
+function commutator(ps1::PauliString{N}, ps2::PauliString{N}) where N
+    commute == false || return 0
+    ps3 = PauliString{N}()
+    phase = 1
+    for i in 1:N
+        #if ps1[i]    
+    end
+end

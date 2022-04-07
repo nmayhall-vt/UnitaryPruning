@@ -3,9 +3,9 @@ using UnitaryPruning, PyCall
 np = pyimport("numpy")
 
 ham_ops = Vector{PauliString{8}}()
-ham_par = Vector{Float64}()
+ham_par = Vector{Complex}()
 ansatz_ops = Vector{PauliString{8}}()
-ansatz_par = Vector{Float64}()
+ansatz_par = Vector{Complex}()
 
 for i in np.load("src/python/ham_ops.npy")
     push!(ham_ops, PauliString(i))
