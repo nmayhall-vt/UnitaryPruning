@@ -52,7 +52,7 @@ function build_binary_tree!(ref_state, energy::Vector{Float64}, o::PauliString{N
     return _recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer, depth, ansatz_ops, vcos, vsin, max_depth)
 end
     
-function _recurse(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh, ansatz_layer, depth, ansatz_ops, vcos, vsin, max_depth)
+function _recurse(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh::Float64, ansatz_layer::Int, depth::Int, ansatz_ops, vcos, vsin, max_depth)
   
     if ansatz_layer == length(ansatz_ops)+1
         # found a leaf
@@ -71,23 +71,56 @@ function _recurse(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh, ans
     # does o need to be transformed by g? Only if a) they don't commute and b) sin(2t)*h > thresh and c) depth < max_depth
     #
     g = ansatz_ops[ansatz_layer]
-    if (depth < max_depth) && (commute(g,o) == false) && (abs(vsin[ansatz_layer]*h) > thresh)
-        # please transform
 
-        # right branch
-        phase, or = commutator(g, o)
-        real(phase) == 0 || error("why is phase not imaginary?", phase)
-        hr = 0.5*real(1im*phase) * h * vsin[ansatz_layer]
+    #if (depth < max_depth) && (commute(g,o) == false) && (abs(vsin[ansatz_layer]*h) > thresh)
+    if 1==0
+        @btime commute($g, $o)
+        error("here")
+    end
+    if commute(g,o) == false
+        if depth < max_depth
+            if abs(vsin[ansatz_layer]*h) > thresh
+                # please transform
 
-        # left branch
-        ol = o
-        hl = h * vcos[ansatz_layer]
-    
-        _recurse(ref_state, energy, pauli_I, ol, hl, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-        _recurse(ref_state, energy, pauli_I, or, hr, thresh, ansatz_layer+1, depth+1, ansatz_ops, vcos, vsin, max_depth)
+                # right branch
+                phase, or = commutator(g, o)
+                if 1==0
+                    @btime commutator($g, $o)
+                    error("here")
+                end
+                real(phase) == 0 || error("why is phase not imaginary?", phase)
+                hr = 0.5*real(1im*phase) * h * vsin[ansatz_layer]
+
+                # left branch
+                ol = o
+                hl = h * vcos[ansatz_layer]
+
+                _recurse(ref_state, energy, pauli_I, ol, hl, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+                _recurse(ref_state, energy, pauli_I, or, hr, thresh, ansatz_layer+1, depth+1, ansatz_ops, vcos, vsin, max_depth)
+            else
+                # found a leaf
+                #_recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+                #_recurse(ref_state, energy, pauli_I, o, h*vcos[ansatz_layer], thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+                _find_leaf_no_branching(ref_state, energy, o, h )
+            end
+        else
+            # found a leaf
+            #_recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+            #_recurse(ref_state, energy, pauli_I, o, h*vcos[ansatz_layer], thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+            _find_leaf_no_branching(ref_state, energy, o, h )
+        end
     else
         # please continue to next operator in ansatz
         _recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
     end
-
 end
+
+function _find_leaf_no_branching(ref_state, energy::Vector{Float64}, o, h )
+    if is_diagonal(o)
+        sign = expectation_value_sign(o, ref_state) 
+
+        #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
+        energy[1] += sign*h
+    end
+end
+

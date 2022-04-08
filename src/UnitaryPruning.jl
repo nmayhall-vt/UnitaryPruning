@@ -3,6 +3,7 @@
 module UnitaryPruning
 
 using Printf
+using BenchmarkTools
 
 greet() = print("Hello World!")
 

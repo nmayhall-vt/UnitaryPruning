@@ -13,7 +13,7 @@ function PauliString(str::String)
 end
 
 function PauliString(n::Int)
-    return PauliString(MVector{n}(['I' for i in 1:n]))
+    return PauliString(MVector{n}(('I' for i in 1:n)))
 end
 
 
@@ -32,7 +32,7 @@ Base.:(==)(x::PauliString{N}, y::PauliString{N}) where N = all(x.string .== y.st
 
 function commute(ps1::PauliString{N}, ps2::PauliString{N}) where N
     #iseven(sum(ps1.string .== ps2.string))
-    n_noncomm = 0
+    n_noncomm::Int = 0
     for i in 1:N
         if ps1[i] == 'I' || ps2[i] == 'I' 
             continue 
@@ -52,7 +52,7 @@ function commutator(ps1::PauliString{N}, ps2::PauliString{N}) where N
 #={{{=#
     # the number of non commuting terms gives the number of imaginary numbers
     # the product of the orderings gives the sign, e.g. [X..., Z...] adds factor of -1
-    commute(ps1, ps2) == false || error(" don't compute commutator for things that commute") 
+    #commute(ps1, ps2) == false || error(" don't compute commutator for things that commute") 
     #commute == false || return 0, PauliString(0)
     ps3 = PauliString(N)
     phase = 1

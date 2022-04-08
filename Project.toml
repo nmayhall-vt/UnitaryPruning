@@ -4,11 +4,13 @@ authors = ["Nick Mayhall <nmayhall@vt.edu>"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Example = "7876af07-990d-54b4-ab0e-23690620f79a"
 NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StatProfilerHTML = "a8a75453-ed82-57c9-9e16-4cd1196ecbf5"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
