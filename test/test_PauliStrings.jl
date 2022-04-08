@@ -14,7 +14,7 @@ up = UnitaryPruning
     p1 = PauliString("XIYIX")
     p2 = PauliString("XIYZY")
     p3 = PauliString("IIIZZ")
-    phase = 2im
+    phase = 1im
 
     @test (up.commute(p1,p2) == false)
     @test (up.commutator(p1,p2)[1] == phase)
@@ -32,7 +32,7 @@ up = UnitaryPruning
     p2 = PauliString("XIZIYYIZY")
      
     p3 = PauliString("YIXIZZYYY")
-    phase = -2im
+    phase = -1im
 
     @test (up.commute(p1,p2) == false)
     @test (up.commutator(p1,p2)[1] == phase)
@@ -47,14 +47,14 @@ up = UnitaryPruning
     p1 = PauliString("YZYIXX")
     p2 = PauliString("XIYZYY")
     p3 = PauliString("ZZIZZZ")
-    phase = 2im
+    phase = 1im
     @test (up.commutator(p1,p2)[1] == phase)
     @test (up.commutator(p1,p2)[2] == p3)
 
     p1 = PauliString("YZYIZX")
     p2 = PauliString("XIYZYY")
     p3 = PauliString("ZZIZXZ")
-    phase = -2im
+    phase = -1im
     @test (up.commutator(p1,p2)[1] == phase)
     @test (up.commutator(p1,p2)[2] == p3)
 
