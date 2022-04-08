@@ -35,7 +35,7 @@ function compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_o
     end
     println(e_hf)
     println(energy)
-       
+    return energy[1] 
 end
 
 function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=4)
@@ -52,7 +52,7 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     end
     println(e_hf)
     println(energy)
-       
+    return energy[1] 
 end
 
 function build_binary_tree!(ref_state, energy::Vector{Float64}, o::PauliString{N}, h, ansatz_ops::Vector{PauliString{N}}, ansatz_par; thresh=1e-12, max_depth=3) where N

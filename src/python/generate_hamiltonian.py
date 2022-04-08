@@ -27,7 +27,8 @@ charge = 0
 spin = 0
 basis = 'sto-3g'
 
-[n_orb, n_a, n_b, h, g, mol, E_nuc, E_scf, C, S] = pyscf_helper.init(geometry,charge,spin,basis)
+[n_orb, n_a, n_b, h, g, mol, E_nuc, E_scf, C, S] = pyscf_helper.init(geometry, charge, spin, basis)
+#[n_orb, n_a, n_b, h, g, mol, E_nuc, E_scf, C, S] = pyscf_helper.init(geometry, charge, spin, basis, localize="pm")
 
 print(" n_orb: %4i" %n_orb)
 print(" n_a  : %4i" %n_a)
