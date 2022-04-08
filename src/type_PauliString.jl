@@ -55,8 +55,9 @@ function commutator(ps1::PauliString{N}, ps2::PauliString{N}) where N
     #commute(ps1, ps2) == false || error(" don't compute commutator for things that commute") 
     #commute == false || return 0, PauliString(0)
     ps3 = PauliString(N)
-    phase = 1
-    for i in 1:N
+    phase::Complex{Int64} = 1
+    #phase = 1
+    for i::Int in 1:N
         if ps1[i] == 'I'
             ps3[i] = ps2[i]
         elseif ps1[i] == 'X'
@@ -97,8 +98,10 @@ function commutator(ps1::PauliString{N}, ps2::PauliString{N}) where N
             end
         end
     end
-    return phase*2, ps3
+    return phase, ps3
+    #return phase*2, ps3
 end#=}}}=#
+
 
 
 """

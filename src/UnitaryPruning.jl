@@ -4,6 +4,8 @@ module UnitaryPruning
 
 using Printf
 using BenchmarkTools
+using DataStructures
+using InteractiveUtils
 
 greet() = print("Hello World!")
 

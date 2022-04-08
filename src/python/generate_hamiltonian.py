@@ -14,7 +14,7 @@ from pyscf import tools
 import numpy as np
 import copy as cp
 
-r = 1.5
+r = 1.0
 geometry = [('H', (0,0,1*r)),
         ('H', (0,0,2*r)),
         ('H', (0,0,3*r)),
@@ -82,7 +82,7 @@ print(reference_ket.T.dot(openfermion.linalg.get_sparse_operator(fermi_ham)).dot
     
 
 #[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=4)
-[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-3)
+[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-3, adapt_maxiter=20)
 
 print(ansatz[-1])
 print(params[-1])
