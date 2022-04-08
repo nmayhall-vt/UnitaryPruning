@@ -12,7 +12,7 @@ from pyscf import tools
 
 #import pickle
 import numpy as np
-
+import copy as cp
 
 r = 1.5
 geometry = [('H', (0,0,1*r)),
@@ -41,14 +41,13 @@ fermi_ham  = sq_ham.export_FermionOperator()
 fermi_ham = openfermion.transforms.normal_ordered(fermi_ham)
 jw_ham = openfermion.transforms.jordan_wigner(fermi_ham)
 
-
-print(jw_ham)
-print(len(jw_ham.terms))
+#print(jw_ham)
+#print(len(jw_ham.terms))
 pool = operator_pools.spin_complement_GSD()
 pool.init(n_orb)
-for p in pool.fermi_ops:
-    print(p)
-    print()
+#for p in pool.fermi_ops:
+#    print(p)
+#    print()
 #return
 hamiltonian = openfermion.linalg.get_sparse_operator(fermi_ham)
 
@@ -69,16 +68,38 @@ for ei in range(len(e)):
     S2 = v[:,ei].conj().T.dot(s2.dot(v[:,ei]))
     print(" State %4i: %12.8f au  <S2>: %12.8f" %(ei,e[ei]+E_nuc,S2))
 
-fermi_ham += FermionOperator((),E_nuc)
+#fermi_ham += FermionOperator((),E_nuc)
+print(len(fermi_ham.terms))
+fermi_ham = openfermion.transforms.normal_ordered(fermi_ham)
+#print("E_nuc ", E_nuc)
+print(len(fermi_ham.terms))
+jw_ham = openfermion.transforms.jordan_wigner(fermi_ham)
+print(len(jw_ham.terms))
+#print(jw_ham)
 pyscf.tools.molden.from_mo(mol, "full.molden", sq_ham.C)
 
-[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1)
+print(reference_ket.T.dot(openfermion.linalg.get_sparse_operator(fermi_ham)).dot(reference_ket))
+    
 
+[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=4)
+#[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=1)
+
+print(ansatz[-1])
+print(params[-1])
 print(" Final ADAPT-VQE energy: %12.8f" %e)
 print(" <S^2> of final state  : %12.8f" %(v.conj().T.dot(s2.dot(v))[0,0].real))
 
+if 1==0:
+    new_state = cp.deepcopy(reference_ket) 
+        
+    G = openfermion.linalg.get_sparse_operator(ansatz[0], n_qubits = 2*n_orb)
+    new_state = scipy.sparse.linalg.expm_multiply((params[0]*G), reference_ket)
+    print(reference_ket.T.dot(hamiltonian.dot(reference_ket)))
+    print(new_state.T.dot(hamiltonian.dot(new_state)))
+    #print(" My HF energy: %12.8f" %(reference_ket.T.dot(hamiltonian.dot(reference_ket)))[0].real)
+    #print(" My 1G energy: %12.8f" %(new_state.T.dot(hamiltonian.dot(new_state)))[0].real)
 
-n_qubits = 8
+n_qubits = 2*n_orb 
 
 ansatz_ops = []
 ansatz_par = []
@@ -90,7 +111,8 @@ for i_idx, i in enumerate(ansatz):
     #     print(openfermion.transforms.jordan_wigner(term))
     #     print()
 
-    jw_term = openfermion.transforms.jordan_wigner(openfermion.transforms.normal_ordered(i))
+    jw_term = openfermion.transforms.jordan_wigner(i)
+    #jw_term = openfermion.transforms.jordan_wigner(openfermion.transforms.normal_ordered(i))
 
     for term in jw_term:
         # print(term.terms.keys())
@@ -98,14 +120,9 @@ for i_idx, i in enumerate(ansatz):
         for key in term.terms.keys():
             for q in key:
                 str_tmp[q[0]] = q[1]
-            # print("".join(str_tmp), term.terms[key]*params[i_idx])
             ansatz_ops.append("".join(str_tmp))
-            ansatz_par.append(term.terms[key]*params[i_idx])
-            # print(key)
-    # print(openfermion.linalg.get_sparse_operator(jw_term))
-    # print(openfermion.transforms.jordan_wigner(openfermion.transforms.normal_ordered(i)))
-    # print(openfermion.transforms.normal_ordered(i))
-    # print()
+            # the negative sign is factored out because we want to express our pauli unitary as exp{-i t G)
+            ansatz_par.append(-1*term.terms[key]*params[i_idx])
 
 # for i_idx, i in enumerate(jw_ham):
 for term in jw_ham:
@@ -116,10 +133,10 @@ for term in jw_ham:
             str_tmp[q[0]] = q[1]
         # print("".join(str_tmp), term.terms[key])
         ham_ops.append("".join(str_tmp))
-        ham_par.append(term.terms[key]*params[i_idx])
+        ham_par.append(term.terms[key])
 
 
-np.save('ham_ops.npy', np.array(ham_ops, '|S8'))
+np.save('ham_ops.npy', ham_ops)
 np.save('ham_par.npy', ham_par)
 np.save('ansatz_ops.npy', ansatz_ops)
 np.save('ansatz_par.npy', ansatz_par)
