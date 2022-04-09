@@ -73,6 +73,15 @@ using BenchmarkTools
     @test pbs1 == PauliBitString(PauliString(pbs1))
     @test ps1 == PauliString(PauliBitString(ps1))
 
+    ps1 = PauliString("YZZXYIIZXXYIZYIZZYYYIXYIYZZXYIIZIXYIYZZXYIIZZIXYIYZZXYIIZXXYIZYIZZYIXYIIXYIYZZXYIIZXXYIZYIZZYIXYI")
+    ps2 = PauliString("XYYZYYZIYYYZYYZYYZZZYYZYYYYZYYZYYYZYYYYZYYZYYYYZYYYYZYYZYYZYYXIZYZZYYZZYYZYYYYZYYZYYZYYXIZYZZYYZZ")
+
+    pbs1 = PauliBitString(ps1, T=UInt128)
+    pbs2 = PauliBitString(ps2, T=UInt128)
+    #@btime UnitaryPruning.commute($ps1, $ps2)
+    #@btime UnitaryPruning.commute($pbs1, $pbs2)
+    @test UnitaryPruning.commute(ps1, ps2) == UnitaryPruning.commute(pbs1, pbs2)
+
     results = []
     for i in 1:30
         for j in 1:30
