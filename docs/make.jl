@@ -6,6 +6,7 @@ pages = [
          "Home" => "index.md",
          "Functions" => Any[
                             "DFS" => "dfs.md",
+                            "Pauli Strings" => "PauliStrings.md",
                             "Table of Contents" => "toc.md"
                            ],
         ]

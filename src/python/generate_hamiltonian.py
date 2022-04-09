@@ -14,7 +14,7 @@ from pyscf import tools
 import numpy as np
 import copy as cp
 
-r = 1.0
+r = 2.0
 geometry = [('H', (0,0,1*r)),
         ('H', (0,0,2*r)),
         ('H', (0,0,3*r)),

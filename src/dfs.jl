@@ -13,77 +13,79 @@ function involutory_transformation(o::PauliString{N}, g::PauliString{N}, t) wher
 
 end
 
-function dfs(ham_ops, ham_par, ansatz_ops, ansatz_par, thresh)
-    o = ham_ops[2]
-    g = ansatz_ops[1]
-    print(o)
-    print(g)
-    println(commute(o,g))
-end
-
 function compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=4)
 
     e_hf = 0.0
-    energy = [0.0]
+    e_cadapt = 0.0
     for hi in 1:length(ham_ops)
         ei = expectation_value_sign(ham_ops[hi], ref_state) * ham_par[hi] 
-        #if is_diagonal(ham_ops[hi])
-        #    @printf("%20s %12.8f %12.8f\n", string(ham_ops[hi]), ei, ham_par[hi])
-        #end
         e_hf += ei
-        build_binary_tree!(ref_state, energy, ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+    
+        energy::Vector{Float64} = [0.0]
+        paths::Vector{Int} = [0,0]
+        recurse_dfs!(ref_state, energy, paths, ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+        e_cadapt += energy[1]
+    
+        @printf("     E contribution = %12.8f: ham coeff = %12.8f: ham op: %s %% Act Branches %12.4f %%  Tot: %i\n", 
+                energy[1], ham_par[hi], string(ham_ops[hi]), paths[1]/sum(paths)*100, sum(paths[1]))
+        #@printf("     %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
     end
-    println(e_hf)
-    println(energy)
-    return energy[1] 
+    @printf(" E(HF)     = %12.8f\n", e_hf)
+    @printf(" E(cADAPT) = %12.8f\n", e_cadapt)
+    return e_cadapt  
 end
 
 function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=4)
 
     e_hf = 0.0
     energy = [0.0]
+    paths::Vector{Int} = [0,0]
     for hi in 1:length(ham_ops)
         ei = expectation_value_sign(ham_ops[hi], ref_state) * ham_par[hi] 
         #if is_diagonal(ham_ops[hi])
         #    @printf("%20s %12.8f %12.8f\n", string(ham_ops[hi]), ei, ham_par[hi])
         #end
         e_hf += ei
-        iterate_dfs!(ref_state, energy, ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+        iterate_dfs!(ref_state, energy, paths, ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
     end
-    println(e_hf)
-    println(energy)
+    @printf(" E(HF)     = %12.8f\n", e_hf)
+    @printf(" E(cADAPT) = %12.8f\n", energy[1])
+    @printf(" %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
     return energy[1] 
 end
 
-function build_binary_tree!(ref_state, energy::Vector{Float64}, o::PauliString{N}, h, ansatz_ops::Vector{PauliString{N}}, ansatz_par; thresh=1e-12, max_depth=3) where N
+function recurse_dfs!(ref_state, energy::Vector{T}, paths::Vector{Int},  
+                            o::PauliString{N}, h::T, 
+                            ansatz_ops::Vector{PauliString{N}}, ansatz_par::Vector{T}; 
+                            thresh=1e-12, max_depth=3) where {N,T}
     #={{{=#
     ansatz_layer = 1
     depth = 0
-
-    pauli_I = PauliString(N)
 
     vcos = cos.(2 .* ansatz_par)
     vsin = sin.(2 .* ansatz_par)
 
 
-    return _recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer, depth, ansatz_ops, vcos, vsin, max_depth)
+    return _recurse(ref_state, energy, paths, o, h, thresh, ansatz_layer, depth, ansatz_ops, vcos, vsin, max_depth)
 end
 #=}}}=#
 
 
-function _recurse(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh::Float64, ansatz_layer::Int, depth::Int, ansatz_ops, vcos, vsin, max_depth)
+function _recurse(ref_state, energy::Vector{T}, paths::Vector{Int}, 
+                  o, h, thresh::T, ansatz_layer::Int, depth::Int, ansatz_ops::Vector{PauliString{N}}, 
+                  vcos::Vector{T}, vsin::Vector{T}, max_depth) where {N,T}
     #={{{=#
     if ansatz_layer == length(ansatz_ops)+1
-        _find_leaf_no_branching(ref_state, energy, o, h )
+        _found_leaf(ref_state, energy, o, h, paths)
     elseif abs(h) < thresh
-        _find_leaf_no_branching(ref_state, energy, o, h )
+        _found_leaf(ref_state, energy, o, h, paths)
     #elseif depth > max_depth
-    #    _find_leaf_no_branching(ref_state, energy, o, h )
+    #    _found_leaf(ref_state, energy, o, h )
     else
 
         g = ansatz_ops[ansatz_layer]
         if commute(g,o)
-            _recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+            _recurse(ref_state, energy, paths, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
         else
             phase, or = commutator(g, o)
             if 1==0
@@ -98,8 +100,8 @@ function _recurse(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh::Flo
             ol = o
             hl = h * vcos[ansatz_layer]
 
-            _recurse(ref_state, energy, pauli_I, ol, hl, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-            _recurse(ref_state, energy, pauli_I, or, hr, thresh, ansatz_layer+1, depth+1, ansatz_ops, vcos, vsin, max_depth)
+            _recurse(ref_state, energy, paths, ol, hl, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
+            _recurse(ref_state, energy, paths, or, hr, thresh, ansatz_layer+1, depth+1, ansatz_ops, vcos, vsin, max_depth)
         end
 
     end
@@ -107,85 +109,23 @@ end
 #=}}}=#
 
 
-function _recurse_old(ref_state, energy::Vector{Float64}, pauli_I, o, h, thresh::Float64, ansatz_layer::Int, depth::Int, ansatz_ops, vcos, vsin, max_depth)
-  #={{{=#
-    if ansatz_layer == length(ansatz_ops)+1
-        # found a leaf
-       
-        # compute energy. Currently, we are only considering product states in the z basis
-        if is_diagonal(o)
-            sign = expectation_value_sign(o, ref_state) 
-
-            #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
-            energy[1] += sign*h
-        end
-        return 
-    end
-
-    #
-    # does o need to be transformed by g? Only if a) they don't commute and b) sin(2t)*h > thresh and c) depth < max_depth
-    #
-    g = ansatz_ops[ansatz_layer]
-
-    #if (depth < max_depth) && (commute(g,o) == false) && (abs(vsin[ansatz_layer]*h) > thresh)
-    if 1==0
-        @btime commute($g, $o)
-        error("here")
-    end
-    if commute(g,o) == false
-        if depth < max_depth
-            if abs(vsin[ansatz_layer]*h) > thresh
-                # please transform
-
-                # right branch
-                phase, or = commutator(g, o)
-                if 1==0
-                    @btime commutator($g, $o)
-                    error("here")
-                end
-                real(phase) == 0 || error("why is phase not imaginary?", phase)
-                hr = real(1im*phase) * h * vsin[ansatz_layer]
-                #hr = 0.5*real(1im*phase) * h * vsin[ansatz_layer]
-
-                # left branch
-                ol = o
-                hl = h * vcos[ansatz_layer]
-
-                _recurse(ref_state, energy, pauli_I, ol, hl, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-                _recurse(ref_state, energy, pauli_I, or, hr, thresh, ansatz_layer+1, depth+1, ansatz_ops, vcos, vsin, max_depth)
-            else
-                # found a leaf
-                #_recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-                #_recurse(ref_state, energy, pauli_I, o, h*vcos[ansatz_layer], thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-                _find_leaf_no_branching(ref_state, energy, o, h )
-            end
-        else
-            # found a leaf
-            #_recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-            #_recurse(ref_state, energy, pauli_I, o, h*vcos[ansatz_layer], thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-            _find_leaf_no_branching(ref_state, energy, o, h )
-        end
-    else
-        # please continue to next operator in ansatz
-        _recurse(ref_state, energy, pauli_I, o, h, thresh, ansatz_layer+1, depth, ansatz_ops, vcos, vsin, max_depth)
-    end
-end
-#=}}}=#
-
-
-function _find_leaf_no_branching(ref_state, energy::Vector{Float64}, o, h )
+function _found_leaf(ref_state, energy::Vector{Float64}, o, h, paths::Vector{Int})
 #={{{=#
     if is_diagonal(o)
         sign = expectation_value_sign(o, ref_state) 
 
         #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
         energy[1] += sign*h
+        paths[1] += 1
+    else
+        paths[2] += 1
     end
 end
 #=}}}=#
 
 
-function iterate_dfs!(ref_state, energy::Vector{Float64}, o::PauliString{N}, h, ansatz_ops::Vector{PauliString{N}}, ansatz_par; thresh=1e-12, max_depth=3) where N
+function iterate_dfs!(ref_state, energy::Vector{Float64}, paths::Vector{Int}, 
+                      o::PauliString{N}, h, ansatz_ops::Vector{PauliString{N}}, ansatz_par; thresh=1e-12, max_depth=3) where N
 #={{{=#
     vcos = cos.(2 .* ansatz_par)
     vsin = sin.(2 .* ansatz_par)
@@ -200,9 +140,9 @@ function iterate_dfs!(ref_state, energy::Vector{Float64}, o::PauliString{N}, h, 
         oi, hi, ansatz_layer = pop!(stack)
     
         if ansatz_layer == length(ansatz_ops)+1
-            _find_leaf_no_branching(ref_state, energy, oi, hi )
+            _found_leaf(ref_state, energy, oi, hi, paths )
         elseif abs(hi) < thresh
-            _find_leaf_no_branching(ref_state, energy, oi, hi )
+            _found_leaf(ref_state, energy, oi, hi, paths )
         else
             g = ansatz_ops[ansatz_layer]
             if commute(g,oi)
