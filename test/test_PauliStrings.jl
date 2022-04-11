@@ -90,6 +90,9 @@ using BenchmarkTools
             ps1 = PauliString(pbs1)
             ps2 = PauliString(pbs2)
 
+            phase1a, pbs12 = UnitaryPruning.commutator(pbs1,pbs2)
+            phase1b, ps12 = UnitaryPruning.commutator(ps1,ps2)
+            @test phase1a == phase1b
             #println(ps1)
             #println(ps2)
             #println(UnitaryPruning.commute(ps1,ps2))

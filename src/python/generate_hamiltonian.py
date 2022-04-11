@@ -14,13 +14,13 @@ from pyscf import tools
 import numpy as np
 import copy as cp
 
-r = 2.0
+r = 1.0
 geometry = [('H', (0,0,1*r)),
         ('H', (0,0,2*r)),
         ('H', (0,0,3*r)),
-        ('H', (0,0,4*r))]
-        #('H', (0,0,5*r)),
-        #('H', (0,0,6*r))]
+        ('H', (0,0,4*r)),
+        ('H', (0,0,5*r)),
+        ('H', (0,0,6*r))]
 
 
 charge = 0

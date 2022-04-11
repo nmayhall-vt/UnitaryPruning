@@ -97,12 +97,17 @@ function commute(pbs1, pbs2)
     #return iseven(sum(pbs1.x & pbs2.z) - sum(pbs1.z & pbs2.x)) 
 end
 
-function del(pbs1::PauliBitString{T,N}, pbs2::PauliBitString{T,N}) where {T,N}
-    return true 
+
+"""
+    commutator(pbs1::PauliBitString, pbs2::PauliBitString)
+"""
+function commutator(pbs1::PauliBitString{T,N}, pbs2::PauliBitString{T,N}) where {T,N}
+    #return 1im^(count_ones(pbs1.x & pbs2.z)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
+    #return -1im*1im^(count_ones(pbs1.x & pbs2.z) - count_ones(pbs1.z & pbs2.x)) * 1im^(count_ones(pbs1.x & pbs2.z)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
+    #return 1im^(-count_ones(pbs1.z & pbs2.x)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
 end
-function dele() 
-    return true 
-end
+
+
 function string_to_bits(str::String)
     x = zeros(UInt8, length(str))
     z = zeros(UInt8, length(str))
