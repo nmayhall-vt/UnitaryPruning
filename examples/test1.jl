@@ -6,11 +6,14 @@ include("../src/read_in.jl")
 ref_val = -3.04433127
 e_hf = -2.7221671004
 
+
+ref_state = [1,1,1,1,0,0,0,0]
+
 e_list = []
 thresh_list = []
 for i in 2:9
     thresh = 10.0^(-i)
-    @time ei = up.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
+    @time ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     #@time ei = up.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=1e-4)
     push!(e_list, ei)
     push!(thresh_list, thresh)
