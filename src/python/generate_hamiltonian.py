@@ -83,7 +83,7 @@ print(reference_ket.T.dot(openfermion.linalg.get_sparse_operator(fermi_ham)).dot
     
 
 #[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=4)
-[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-3, adapt_maxiter=20)
+[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=20)
 
 print(ansatz[-1])
 print(params[-1])
