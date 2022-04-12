@@ -65,23 +65,39 @@ using BenchmarkTools
     @test UnitaryPruning.n_non_eye(pbs3) == 5
    
     println(" commute: ", UnitaryPruning.commute(pbs1,pbs2))
-    #@btime UnitaryPruning.commute($pbs1, $pbs2)
+    @btime UnitaryPruning.commute($pbs1, $pbs2)
 
     # Check that we can interconvert
     pbs1 = PauliBitString{UInt,20}(367,23)
-    ps1 = PauliString("XIYZYYIIZXYZ")
+    ps1 = PauliString("XIYZIZZXYZYYIIZXYZ")
     @test pbs1 == PauliBitString(PauliString(pbs1))
     @test ps1 == PauliString(PauliBitString(ps1))
+    
+    ps2 = PauliString("XIXZIIZZXYZYIZZXYZ")
+    pbs2 == PauliBitString(ps2)
+
+    #@btime UnitaryPruning.commute($ps1, $ps2)
+    #@btime UnitaryPruning.commute($pbs1, $pbs2)
+    
+    #sam_1 = pauli_string_to_pauli("XIYZIZZXYZYYIIZXYZ")
+    #sam_2 = pauli_string_to_pauli("XIXZIIZZXYZYIZZXYZ")
+
+    #println("Sams")
+    #@btime pauli_commute($sam_1, $sam_2)
 
     ps1 = PauliString("YZZXYIIZXXYIZYIZZYYYIXYIYZZXYIIZIXYIYZZXYIIZZIXYIYZZXYIIZXXYIZYIZZYIXYIIXYIYZZXYIIZXXYIZYIZZYIXYI")
     ps2 = PauliString("XYYZYYZIYYYZYYZYYZZZYYZYYYYZYYZYYYZYYYYZYYZYYYYZYYYYZYYZYYZYYXIZYZZYYZZYYZYYYYZYYZYYZYYXIZYZZYYZZ")
 
+
     pbs1 = PauliBitString(ps1, T=UInt128)
     pbs2 = PauliBitString(ps2, T=UInt128)
-    #@btime UnitaryPruning.commute($ps1, $ps2)
-    #@btime UnitaryPruning.commute($pbs1, $pbs2)
+    println(" Time for PauliString commute test")
+    @btime UnitaryPruning.commute($ps1, $ps2)
+    println(" Time for PauliBitString commute test")
+    @btime UnitaryPruning.commute($pbs1, $pbs2)
+    
     @test UnitaryPruning.commute(ps1, ps2) == UnitaryPruning.commute(pbs1, pbs2)
-
+   
     results = []
     for i in 1:30
         for j in 1:30
@@ -90,9 +106,10 @@ using BenchmarkTools
             ps1 = PauliString(pbs1)
             ps2 = PauliString(pbs2)
 
-            phase1a, pbs12 = UnitaryPruning.commutator(pbs1,pbs2)
-            phase1b, ps12 = UnitaryPruning.commutator(ps1,ps2)
-            @test phase1a == phase1b
+            #phase1a, pbs12 = UnitaryPruning.commutator(pbs1,pbs2)
+            #phase1b, ps12 = UnitaryPruning.commutator(ps1,ps2)
+            
+            #@test phase1a == phase1b
             #println(ps1)
             #println(ps2)
             #println(UnitaryPruning.commute(ps1,ps2))
