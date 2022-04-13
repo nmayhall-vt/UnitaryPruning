@@ -57,14 +57,17 @@ e_hf = -7.7393739490
 e_list = []
 e_list2 = []
 thresh_list = []
-for i in 1:8
+t_list = []
+for i in 1:9
     thresh = 10.0^(-i)
-    @time ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    #@time ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    #@time ei2 = UnitaryPruning.compute_expectation_value_recurse2(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
+    t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     push!(e_list, ei)
     #push!(e_list2, ei2)
     push!(thresh_list, thresh)
+    push!(t_list, t)
+end
+for t in t_list
+    println(t)
 end
 
 #plot(thresh_list, [e_list .- ref_val, e_list2 .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
