@@ -31,3 +31,12 @@ function PauliString(pbs::PauliBitString{T,N}) where {T,N}
     end
     return PauliString(MVector{N}(str))
 end
+
+
+function PauliMask(ps::PauliString; T=UInt64)
+    return pauli_string_to_pauli(string(ps), T=T)
+end
+function PauliString(pm::PauliMask{T,N}) where {T,N}
+    str = pauli_to_pauli_string(pm)
+    return PauliString{N}(reverse([i for i in str]))
+end
