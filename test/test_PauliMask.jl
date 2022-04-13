@@ -11,6 +11,9 @@ using BenchmarkTools
 
     pm1 = PauliMask(ps1)
     pm2 = PauliMask(ps2)
+
+    @test is_diagonal(pm1) == false
+    @test is_diagonal(PauliMask(PauliString("IZZIZIZZI"))) == true
     
     println(commute(pm1, pm2)) 
     println(commute(ps1, ps2))

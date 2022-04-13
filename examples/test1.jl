@@ -4,17 +4,17 @@ using PyCall
 
 np = pyimport("numpy")
 
-ham_ops = Vector{PauliString{12}}()
-ham_par = Vector{Float64}()
-ansatz_ops = Vector{PauliString{12}}()
+T = UInt
+N = 12
+
+ham_par    = Vector{Float64}()
 ansatz_par = Vector{Float64}()
 
-for i in np.load("src/python/ham_ops.npy")
-    push!(ham_ops, PauliString(i))
-end
-for i in np.load("src/python/ansatz_ops.npy")
-    push!(ansatz_ops, PauliString(i))
-end
+ham_ops    = Vector{PauliString{N}}()
+ansatz_ops = Vector{PauliString{N}}()
+
+ref_state = [1,1,1,1,1,1,0,0,0,0,0,0]
+
 
 for i in np.load("src/python/ansatz_par.npy")
     # Ansatz parameters should be real 
@@ -25,21 +25,42 @@ for i in np.load("src/python/ham_par.npy")
     push!(ham_par, i)
 end
 
+do_mask = true 
+
+if do_mask
+    ansatz_ops = Vector{PauliMask{T,N}}()
+    ham_ops    = Vector{PauliMask{T,N}}()
+    ref_state = parse(T, join(ref_state); base=2)
+    for i in np.load("src/python/ham_ops.npy")
+        push!(ham_ops, PauliMask(PauliString(i)))
+    end
+    for i in np.load("src/python/ansatz_ops.npy")
+        push!(ansatz_ops, PauliMask(PauliString(i)))
+    end
+else
+    for i in np.load("src/python/ham_ops.npy")
+        push!(ham_ops, PauliString(i))
+    end
+    for i in np.load("src/python/ansatz_ops.npy")
+        push!(ansatz_ops, PauliString(i))
+    end
+end
+
 ref_val = -3.04433127
 e_hf = -2.7221671004
 
 ref_val = -7.83360160
 e_hf = -7.7393739490
 
-ref_state = [1,1,1,1,1,1,0,0,0,0,0,0]
+
 
 e_list = []
 e_list2 = []
 thresh_list = []
-for i in 1:6
+for i in 1:8
     thresh = 10.0^(-i)
-    #@time ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    @time ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
+    @time ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
+    #@time ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     #@time ei2 = UnitaryPruning.compute_expectation_value_recurse2(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     push!(e_list, ei)
     #push!(e_list2, ei2)

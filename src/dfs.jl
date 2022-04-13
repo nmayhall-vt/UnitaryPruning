@@ -58,26 +58,31 @@ end
 function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=4)
 
     e_hf = 0.0
-    energy = [0.0]
+    e_cadapt = 0.0
+    
     paths::Vector{Int} = [0,0]
     for hi in 1:length(ham_ops)
         ei = expectation_value_sign(ham_ops[hi], ref_state) * ham_par[hi] 
+        e_hf += ei
+    
+        energy::Vector{Float64} = [0.0]
         #if is_diagonal(ham_ops[hi])
         #    @printf("%20s %12.8f %12.8f\n", string(ham_ops[hi]), ei, ham_par[hi])
         #end
-        e_hf += ei
         iterate_dfs!(ref_state, energy, paths, ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+        e_cadapt += energy[1]
     end
-    @printf(" E(HF)     = %12.8f\n", e_hf)
-    @printf(" E(cADAPT) = %12.8f\n", energy[1])
-    @printf(" %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
-    return energy[1] 
+    #@printf(" E(HF)     = %12.8f\n", e_hf)
+    #@printf(" E(cADAPT) = %12.8f\n", energy[1])
+    #@printf(" %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
+    @printf(" E(cADAPT) = %12.8f\n", e_cadapt)
+    return e_cadapt 
 end
 
 function recurse_dfs!(ref_state, energy::Vector{T}, paths::Vector{Int},  
-                            o::PauliString{N}, h::T, 
-                            ansatz_ops::Vector{PauliString{N}}, ansatz_par::Vector{T}; 
-                            thresh=1e-12, max_depth=3) where {N,T}
+                            o, h::T, 
+                            ansatz_ops::Vector, ansatz_par::Vector{T}; 
+                            thresh=1e-12, max_depth=3) where {T}
     #={{{=#
     ansatz_layer = 1
     depth = 0
@@ -91,9 +96,9 @@ end
 #=}}}=#
 
 function recurse_dfs2!(ref_state, energy::Vector{T}, paths::Vector{Int},  
-                            o::PauliString{N}, h::T, 
-                            ansatz_ops::Vector{PauliString{N}}, ansatz_par::Vector{T}; 
-                            thresh=1e-12, max_depth=3) where {N,T}
+                            o, h::T, 
+                            ansatz_ops::Vector, ansatz_par::Vector{T}; 
+                            thresh=1e-12, max_depth=3) where {T}
     #={{{=#
     ansatz_layer = 1
     depth = 0
@@ -108,7 +113,7 @@ end
 
 
 function _recurse(ref_state, energy::Vector{T}, paths::Vector{Int}, 
-                  o, h, thresh::T, ansatz_layer::Int, depth::Int, ansatz_ops::Vector{PauliString{N}}, 
+                  o, h, thresh::T, ansatz_layer::Int, depth::Int, ansatz_ops::Vector, 
                   vcos::Vector{T}, vsin::Vector{T}, max_depth) where {N,T}
     #={{{=#
     if ansatz_layer == length(ansatz_ops)+1
@@ -146,7 +151,7 @@ end
 
 
 function _recurse2(ref_state, energy::Vector{T}, paths::Vector{Int}, 
-                  o, h, thresh::T, ansatz_layer::Int, depth::Int, ansatz_ops::Vector{PauliString{N}}, 
+                  o, h, thresh::T, ansatz_layer::Int, depth::Int, ansatz_ops::Vector, 
                   vcos::Vector{T}, vsin::Vector{T}, max_depth) where {N,T}
     #={{{=#
     if ansatz_layer == length(ansatz_ops)+1
@@ -201,7 +206,7 @@ end
 
 
 function iterate_dfs!(ref_state, energy::Vector{Float64}, paths::Vector{Int}, 
-                      o::PauliString{N}, h, ansatz_ops::Vector{PauliString{N}}, ansatz_par; thresh=1e-12, max_depth=3) where N
+                      o, h, ansatz_ops::Vector, ansatz_par; thresh=1e-12, max_depth=3) where N
 #={{{=#
     vcos = cos.(2 .* ansatz_par)
     vsin = sin.(2 .* ansatz_par)
@@ -209,7 +214,7 @@ function iterate_dfs!(ref_state, energy::Vector{Float64}, paths::Vector{Int},
    
     #ori = PauliString(N)
 
-    stack = Stack{Tuple{PauliString{N},Float64,Int}}()  
+    stack = Stack{Tuple{typeof(o),Float64,Int}}()  
     push!(stack, (o,h,1)) 
 
     while length(stack) > 0

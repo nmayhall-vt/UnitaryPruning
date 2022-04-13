@@ -197,7 +197,39 @@ function commutator(P::PauliMask{T,N}, Q::PauliMask{T,N}) where {T,N}
     z = (P.x & Q.y) | (Q.x & P.y) | (P.id & Q.z) | (Q.id & P.z)
     phase += 1*(count_ones(P.x & Q.y) - count_ones(Q.x & P.y))
 
+    phase = phase%4
+    if phase == 0
+        return 1,  PauliMask{T,N}(~(x|y|z), x, y, z)
+    elseif phase == 1
+        return 1im,  PauliMask{T,N}(~(x|y|z), x, y, z)
+    elseif phase == 2
+        return -1,  PauliMask{T,N}(~(x|y|z), x, y, z)
+    elseif phase == 3
+        return -1im,  PauliMask{T,N}(~(x|y|z), x, y, z)
+    else
+        throw(DomainError)
+    end
+    #return 1im^phase, PauliMask{T,N}(~(x|y|z), x, y, z)
+end
 
-    return 1im^phase, PauliMask{T,N}(~(x|y|z), x, y, z)
+
+"""
+    expectation_value_sign(o::PauliMask{T,N}, ket::Vector{Integer})
+
+compute expectation value of PauliString `o` for a product state `ket`
+"""
+function expectation_value_sign(pm::PauliMask{T,N}, ket::T) where {T,N}
+    is_diagonal(pm) || return 0.0
+    return (-1)^count_ones(pm.z & ket)%2
+end
+
+
+"""
+    is_diagonal(pm1::PauliMask{T,N})
+
+Is `pm1` diagonal?
+"""
+function is_diagonal(pm1::PauliMask{T,N}) where {T,N}
+    return count_ones(pm1.x | pm1.y) == 0 
 end
 

@@ -20,6 +20,8 @@ export PauliBitString
 export PauliMask
 export commute
 export commutator
+export is_diagonal
+export expectation_value_sign
 
 
 end # module
