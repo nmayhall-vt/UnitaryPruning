@@ -10,7 +10,7 @@ import scipy
 import pyscf
 from pyscf import tools
 
-#import pickle
+import pickle
 import numpy as np
 import copy as cp
 
@@ -18,9 +18,9 @@ r = 2.0
 geometry = [('H', (0,0,1*r)),
         ('H', (0,0,2*r)),
         ('H', (0,0,3*r)),
-        ('H', (0,0,4*r)),
-        ('H', (0,0,5*r)),
-        ('H', (0,0,6*r))]
+        ('H', (0,0,4*r))]
+        #('H', (0,0,5*r)),
+        #('H', (0,0,6*r))]
 
 
 charge = 0
@@ -79,11 +79,21 @@ print(len(jw_ham.terms))
 #print(jw_ham)
 pyscf.tools.molden.from_mo(mol, "full.molden", sq_ham.C)
 
+#tsum = 0
+#for t in jw_ham:
+#    print(t.get_operators())
+#    #jw_t = openfermion.transforms.jordan_wigner(t)
+#    tsum += len(t.terms)
+#    #print()
+#
+#print(tsum)
+#exit()
+
 print(reference_ket.T.dot(openfermion.linalg.get_sparse_operator(fermi_ham)).dot(reference_ket))
     
 
 #[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=4)
-[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=20)
+[e, v, params, ansatz] = vqe_methods.adapt_vqe(fermi_ham, pool, reference_ket, theta_thresh=1e-9, adapt_thresh=1e-1, adapt_maxiter=2)
 
 print(ansatz[-1])
 print(params[-1])
@@ -104,6 +114,7 @@ n_qubits = 2*n_orb
 
 ansatz_ops = []
 ansatz_par = []
+ansatz_ops_grouped = []
 ham_ops = []
 ham_par = []
 
@@ -115,6 +126,7 @@ for i_idx, i in enumerate(ansatz):
     jw_term = openfermion.transforms.jordan_wigner(i)
     #jw_term = openfermion.transforms.jordan_wigner(openfermion.transforms.normal_ordered(i))
 
+    term_list = []
     for term in jw_term:
         # print(term.terms.keys())
         str_tmp = ["I",]*n_qubits
@@ -124,6 +136,8 @@ for i_idx, i in enumerate(ansatz):
             ansatz_ops.append("".join(str_tmp))
             # the negative sign is factored out because we want to express our pauli unitary as exp{-i t G)
             ansatz_par.append(-1*term.terms[key]*params[i_idx])
+            term_list.append((-1*term.terms[key]*params[i_idx], "".join(str_tmp)))
+    ansatz_ops_grouped.append(term_list) 
 
 # for i_idx, i in enumerate(jw_ham):
 for term in jw_ham:
@@ -139,5 +153,10 @@ for term in jw_ham:
 
 np.save('ham_ops.npy', ham_ops)
 np.save('ham_par.npy', ham_par)
+#np.save('ansatz_ops_grouped.npy', ansatz_ops_grouped)
 np.save('ansatz_ops.npy', ansatz_ops)
 np.save('ansatz_par.npy', ansatz_par)
+
+fileObj = open('ansatz_ops_grouped.pkl', 'wb')
+pickle.dump(ansatz_ops_grouped, fileObj)
+fileObj.close()

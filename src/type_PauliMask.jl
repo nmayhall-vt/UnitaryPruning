@@ -7,7 +7,7 @@ import IterTools: enumerate
 # modified
 ########################
 
-struct PauliMask{T<:Unsigned, N}
+struct PauliMask{T<:Unsigned, N} <: Pauli
     #=
     Pauli mask representation of a Pauli string.
     This type is parametric on `T` so that smaller

@@ -1,34 +1,3 @@
-#struct PauliBitString{N}
-#    #x::MVector{N,Bool}
-#    #z::MVector{N,Bool}
-#    x::BitVector{N}
-#    y::BitVector{N}
-#end
-#
-#function PauliBitString(x::T, z::T, N::T) where {T<:Integer}
-#    return PauliBitString{N}(digits(x, base=2, pad=N), digits(z, base=2, pad=N))
-#end
-#
-#function PauliBitString(ps::PauliString{N}) where {N}
-#    #x = [0 for i in 1:N]
-#    #z = [0 for i in 1:N]
-#    #println(join((ps[i] == 'X' || ps[i] == 'Y' ? true : false  for i in 1:N)))
-#    #println(join((ps[i] == 'Z' || ps[i] == 'Y' ? true : false  for i in 1:N)))
-#    #println(((ps[i] == 'I' || ps[i] == 'Z') ? 1 : for i in ps.string))
-#    return PauliBitString(MVector{N,Bool}(ps[i] == 'X' || ps[i] == 'Y' ? true : false  for i in 1:N),
-#                          MVector{N,Bool}(ps[i] == 'Z' || ps[i] == 'Y' ? true : false  for i in 1:N))
-#end
-#
-##function test4(a, b)
-##    s = length(a)
-##    c = Vector{Bool}(undef, s)
-##    @avx for i in 1:s
-##        c[i] = a[i] > b[i]
-##    end
-##    c
-##end
-
-
 
 """
     PauliBitString{N} <: Operator 
@@ -48,7 +17,7 @@ Products of operators simply concatonate the left and right strings separately. 
     XYZIY = 11001|01101
 
 """
-struct PauliBitString{T, N} 
+struct PauliBitString{T, N} <: Pauli 
     x::T  
     z::T
     #function PauliBitString(str::String) where {N}

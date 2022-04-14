@@ -3,9 +3,10 @@ using Plots
 using PyCall
 
 np = pyimport("numpy")
+pickle = pyimport("pickle")
 
 T = UInt
-N = 12
+N = 8
 
 println(dir)
 
@@ -14,6 +15,7 @@ ansatz_par = Vector{Float64}()
 
 ham_ops    = Vector{PauliString{N}}()
 ansatz_ops = Vector{PauliString{N}}()
+ansatz_ops_grouped = Vector{Vector{Tuple{PauliString{N}, Float64}}}()
 
 ref_state = [1,1,1,1,1,1,0,0,0,0,0,0]
 
@@ -25,6 +27,39 @@ for i in np.load(dir*"/ansatz_par.npy")
 end
 for i in np.load(dir*"/ham_par.npy")
     push!(ham_par, i)
+end
+
+function mypickle(filename, obj)
+    out = open(filename,"w")
+    pickle.dump(obj, out)
+    close(out)
+ end
+
+function myunpickle(filename)
+    r = nothing
+    @pywith pybuiltin("open")(filename,"rb") as f begin
+        r = pickle.load(f)
+    end
+    return r
+end
+
+grouped = myunpickle(dir*"ansatz_ops_grouped.pkl")
+for i in grouped
+    tmp::Vector{Tuple{PauliString{N},Float64}} = []
+    for j in i
+        println(j[2], " ", abs(j[1]))
+        push!(tmp, (PauliString(j[2]), real(-1.0im*j[1])))
+    end
+    push!(ansatz_ops_grouped, tmp)
+    println()
+end
+
+for a in ansatz_ops_grouped
+    for i in a
+        for j in a
+            commute(i[1], j[1]) || error("here")
+        end
+    end
 end
 
 do_mask = true 

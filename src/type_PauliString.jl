@@ -1,6 +1,6 @@
 using StaticArrays
 
-struct PauliString{N}
+struct PauliString{N} <: Pauli
     string::MVector{N,Char}
 end
 
