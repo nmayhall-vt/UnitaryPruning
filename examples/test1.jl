@@ -60,7 +60,7 @@ e_list = []
 e_list2 = []
 thresh_list = []
 t_list = []
-for i in 1:9
+for i in 1:2
     thresh = 10.0^(-i)
     t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     push!(e_list, ei)
