@@ -85,7 +85,8 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     energy = 0.0
     npath_nonzero = 0
     npath_zero = 0
-    
+    #hi = 2
+    #println(ham_par[hi])
     for hi in 1:length(ham_ops)
         f = iterate_dfs!(ref_state, [0.0], [0,0], ham_ops[hi], ham_par[hi], 
                          ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
@@ -235,6 +236,10 @@ function iterate_dfs!(ref_state, energy::Vector{T}, paths::Vector{Int},
     depth = 0
    
     stack = Stack{Tuple{typeof(o),Float64,Int,Int}}()  
+    #stack = Stack{Tuple{typeof(o),Float64,Int,Int}}(undef,1000)  
+    #stack = Vector{Tuple{typeof(o),Float64,Int,Int}}()  
+
+    
     push!(stack, (o,h,1,1)) 
 
     my_energy::Vector{T} = [0.0]
