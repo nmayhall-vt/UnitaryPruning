@@ -6,7 +6,7 @@ using Distributed
 """
 function compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20)
 #={{{=#
-    
+   
     energy, npath_nonzero, npath_zero = @distributed (.+) for hi in 1:length(ham_ops)
         #ei = expectation_value_sign(ham_ops[hi], ref_state) * ham_par[hi] 
         #e_hf += ei
@@ -15,12 +15,16 @@ function compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, an
         #if is_diagonal(ham_ops[hi])
         #    @printf("%20s %12.8f %12.8f\n", string(ham_ops[hi]), ei, ham_par[hi])
         #end
-        iterate_dfs!(ref_state, [0.0], [0,0], ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+        #iterate_dfs!(ref_state, [0.0], [0,0], ham_ops[hi], ham_par[hi], ansatz_ops, ansatz_par, thresh=thresh, max_depth=max_depth)
+        iterate_dfs!(ref_state, 
+                         ham_ops[hi], ham_par[hi], 
+                         ansatz_ops, ansatz_par, 
+                         thresh=thresh, max_depth=max_depth)
     end
     #@printf(" E(HF)     = %12.8f\n", e_hf)
     #@printf(" E(cADAPT) = %12.8f\n", energy[1])
     #@printf(" %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
-    @printf(" E(cADAPT) = %12.8f  #Diagonal Paths %5i  #Nondiagonal Paths %5i\n", energy, npath_nonzero, npath_zero)
+    @printf(" E(cADAPT) = %12.8f  #Diagonal Paths %12i  #Nondiagonal Paths %12i\n", energy, npath_nonzero, npath_zero)
     return energy 
 end
 #=}}}=#
@@ -47,7 +51,7 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
         npath_nonzero += f[2]
         npath_zero += f[3]
     end
-    @printf(" E(cADAPT) = %12.8f  #Diagonal Paths %5i  #Nondiagonal Paths %5i\n", energy, npath_nonzero, npath_zero)
+    @printf(" E(cADAPT) = %12.8f  #Diagonal Paths %12i  #Nondiagonal Paths %12i\n", energy, npath_nonzero, npath_zero)
     return energy 
 end
 #=}}}=#
@@ -131,6 +135,7 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{Vector{P}},
     return my_energy[1], my_paths[1], my_paths[2] 
 end
 #=}}}=#
+
 """
 """
 function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
