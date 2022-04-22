@@ -79,4 +79,4 @@ plot(thresh_list, [e_list .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],
      xaxis=:log)
 xlabel!("Threshold")
 ylabel!("Error, au")
-title!("H6 @ 1A")
+title!("BeH2 @ 2.39A")
