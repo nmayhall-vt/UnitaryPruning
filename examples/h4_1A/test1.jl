@@ -11,7 +11,7 @@ pickle = pyimport("pickle")
 
 #dir = "./examples/beh2_2r/"
 dir = "./"
-@everywhere ref_state = [1,1,1,1,1,1,0,0,0,0,0,0,0,0]
+@everywhere ref_state = [1,1,1,1,0,0,0,0]
 @everywhere N = length(ref_state) 
 include("./read_in.jl")
 
