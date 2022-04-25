@@ -28,7 +28,7 @@ e_list = []
 e_list2 = []
 thresh_list = []
 t_list = []
-for i in 1:14
+for i in 2:8
     thresh = 10.0^(-i)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
@@ -44,17 +44,50 @@ for t in t_list
 end
 e_hf = -4.5599680231
 ref_val = -4.60060768
-
+log = false
 #plot(thresh_list, [e_list .- ref_val, e_list2 .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
-plot(thresh_list, [abs.(e_list .- ref_val), abs.([e_hf-ref_val for i in 1:length(e_list)])],  
-     label = ["classical ADAPT" "HF"], 
-     lw = 3, 
-     marker=true,
-     xaxis=:log, yaxis=:log)
+if log
+    plot(thresh_list, [abs.(e_list .- ref_val), [e_hf-ref_val for i in 1:length(e_list)]],  
+         label = ["classical ADAPT" "HF"], 
+         lw = 3, 
+         marker=true,
+         xaxis=:log, yaxis=:log)
+else
+    plot(thresh_list, [abs.(e_list .- ref_val), [e_hf-ref_val for i in 1:length(e_list)]],  
+         label = ["classical ADAPT" "HF"], 
+         lw = 3, 
+         marker=true,
+         xaxis=:log)
+end
 xlabel!("Threshold")
 ylabel!("Error, au")
 title!("H4 @ 1A")
 
 
+e_list = []
+thresh_list = []
 
-res = UnitaryPruning.optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=1e-8, thresh1=1e-3);
+println(" Now we will optimize the parameters for each truncation level")
+
+for i in 2:8
+    thresh = 10.0^(-i)
+    res = UnitaryPruning.optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=1e-14, thresh1=thresh);
+    #display(res.minimizer)
+    push!(e_list, res.minimum)
+    push!(thresh_list, thresh)
+end
+
+
+if log
+    plot!(thresh_list, [abs.(e_list .- ref_val)],  
+          label = ["classical ADAPT opt"], 
+          lw = 3, 
+          marker=true,
+          xaxis=:log, yaxis=:log)
+else
+    plot!(thresh_list, [e_list .- ref_val],  
+          label = ["classical ADAPT opt"], 
+          lw = 3, 
+          marker=true,
+         xaxis=:log)
+end
