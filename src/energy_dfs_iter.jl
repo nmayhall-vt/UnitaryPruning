@@ -204,7 +204,8 @@ function _found_leaf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, pa
         energy[1] += ei * erfe
         npaths[1] += 1
                 
-        dfde = erfe + 2*ei*ei*exp(-(ei/thresh1)^4)/thresh1/thresh1/sqrt(pi)
+        dfde = erfe 
+        #dfde = erfe + 2*ei*ei*exp(-(ei/thresh1)^4)/thresh1/thresh1/sqrt(pi)
 
         #println(path)
         # compute gradient contribution
@@ -275,7 +276,8 @@ function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; th
     optmethod = ConjugateGradient()
     optmethod = LBFGS()
    
-    res = Optim.optimize(func, grad, p, optmethod, options)
+    res = Optim.optimize(func, p, optmethod, options)
+    #res = Optim.optimize(func, grad, p, optmethod, options)
     summary(res)
     e = Optim.minimum(res)
     display(res)
