@@ -229,23 +229,23 @@ end
 
 function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20, thresh1=1e-6)
 
-    esave = 0.0
-    gsave = []
+    #ecurr = 0.0
+    #gcurr = zeros(length(ansatz_par)) 
     iter = 0
+    ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh, thresh1=thresh1)
+    
     function func(p::Vector{Float64})
-        e,g = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, thresh=thresh, thresh1=thresh1)
-        esave = deepcopy(e)
-        gsave = deepcopy(g)
-        return e 
+        ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, thresh=thresh, thresh1=thresh1)
+        return ecurr 
     end
     function grad(g::Vector{Float64}, p::Vector{Float64})
         et, gt = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, thresh=thresh, thresh1=thresh1)
         g .= gt
-        return  
+        return gcurr
     end
     function callback(p)
         iter += 1
-        @printf(" %5i E = %12.8f G = %12.8f \n", iter, esave, norm(gsave))
+        @printf(" %5i E = %12.8f G = %12.8f \n", iter, ecurr, norm(gcurr))
         return false 
     end
    
@@ -271,8 +271,11 @@ function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; th
     p = deepcopy(ansatz_par)
         
     optmethod = BFGS()
+    optmethod = Newton()
+    optmethod = ConjugateGradient()
+    optmethod = LBFGS()
    
-    res = Optim.optimize(func, grad, p, LBFGS(), options)
+    res = Optim.optimize(func, grad, p, optmethod, options)
     summary(res)
     e = Optim.minimum(res)
     display(res)
