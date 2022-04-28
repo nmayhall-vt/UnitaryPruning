@@ -42,15 +42,19 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     npath_zero = 0
     gradient = deepcopy(ansatz_par)
     fill!(gradient, zero(0))
+    graph_adj = Vector{Vector{Int}}()
+    graph_ne = Int(0)
     #hi = 2
     #println(ham_par[hi])
     for hi in 1:length(ham_ops)
+        hi == 3 || continue
         f = iterate_dfs!(ref_state, 
                          ham_ops[hi], ham_par[hi], 
                          ansatz_ops, ansatz_par, 
                          thresh=thresh, 
                          thresh1=thresh1,
-                         max_depth=max_depth)
+                         max_depth=max_depth,
+                         graph_adj, graph_ne)
 
         energy += f[1]
         gradient .+= f[2]
@@ -64,6 +68,99 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
 end
 #=}}}=#
 
+
+
+"""
+"""
+function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
+                      ansatz_par::Vector{T}, graph_adj, graph_ne; 
+                      thresh=1e-15, 
+                      thresh1=1e-12,
+                      max_depth=20) where {T,N, P<:Pauli}
+#={{{=#
+    vcos = cos.(2 .* ansatz_par)
+    vsin = sin.(2 .* ansatz_par)
+    vcot = cot.(2 .* ansatz_par)
+    vtan = tan.(2 .* ansatz_par)
+    depth = 0
+
+    path = zeros(Int8, length(ansatz_ops)+1)
+   
+    stack = Stack{Tuple{typeof(o),Float64,Int,Int, Int8, Int}}()  
+    #stack = Stack{Tuple{typeof(o),Float64,Int,Int}}(undef,1000)  
+    #stack = Vector{Tuple{typeof(o),Float64,Int,Int}}()  
+
+    node_id = 0
+    graph_edges = Vector{Tuple{Int,Int}}()
+
+    push!(stack, (o,h,1,1,0,0)) 
+
+    my_energy::Vector{T} = [0.0]
+    my_paths::Vector{Int} = [0, 0]
+    
+    my_gradient = deepcopy(ansatz_par)
+    fill!(my_gradient, zero(0))
+
+    while length(stack) > 0
+        oi, hi, ansatz_layer, depth, branch_direction, parent_id = pop!(stack)
+
+
+        path[ansatz_layer] = branch_direction
+
+        if ansatz_layer == length(ansatz_ops)+1
+            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+
+        #elseif abs(hi) < thresh
+        elseif abs(hi * erf(hi*hi/thresh1/thresh1)) < thresh
+            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+        else
+
+            g = ansatz_ops[ansatz_layer]
+            if commute(g,oi)
+                push!(stack, (oi, hi, ansatz_layer+1, depth, 0, node_id))
+            else
+                node_id += 1
+                push!(graph_edges, (parent_id, node_id))
+                
+                if depth >= max_depth
+                    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+                end
+
+                phase, or = commutator(g, oi)
+                hr = real(1im*phase) * hi * vsin[ansatz_layer]
+                #hr = 0.5*real(1im*phase) * hi * vsin[ansatz_layer]
+
+                push!(stack, (or, hr, ansatz_layer+1, depth+1, -1, node_id))
+
+                # left branch
+                hl = hi * vcos[ansatz_layer]
+                push!(stack, (oi, hl, ansatz_layer+1, depth, 1, node_id))
+            end
+        end
+    end
+    nodes = Dict{Int, Vector{Int}}()
+    for e in graph_edges
+        println(e)
+        if haskey(nodes, e[1])
+            push!(nodes[e[1]], e[2])
+        else
+            nodes[e[1]] = [e[2]]
+        end
+        if haskey(nodes, e[2])
+            push!(nodes[e[2]], e[1])
+        else
+            nodes[e[2]] = [e[1]]
+        end
+    end
+    for n in nodes
+        println(n)
+    end
+
+    println(length(nodes))
+    println(maximum(keys(nodes)))
+    return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
+end
+#=}}}=#
 
 
 """
