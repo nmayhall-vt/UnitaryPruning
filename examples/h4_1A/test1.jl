@@ -44,9 +44,9 @@ for t in t_list
 end
 e_hf = -4.5599680231
 ref_val = -4.60060768
-log = false
+do_log = false
 #plot(thresh_list, [e_list .- ref_val, e_list2 .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
-if log
+if do_log
     plot(thresh_list, [abs.(e_list .- ref_val), [e_hf-ref_val for i in 1:length(e_list)]],  
          label = ["classical ADAPT" "HF"], 
          lw = 3, 
@@ -78,7 +78,7 @@ for i in 2:8
 end
 
 
-if log
+if do_log
     plot!(thresh_list, [abs.(e_list .- ref_val)],  
           label = ["classical ADAPT opt"], 
           lw = 3, 
