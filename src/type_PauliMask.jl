@@ -176,12 +176,13 @@ function commute(P::PauliMask, Q::PauliMask)
     y = (P.y & Q.y)|id
     z = (P.z & Q.z)|id
 
-    res = 0
-    res += count_ones(x)
-    res += count_ones(y)
-    res += count_ones(z)
+    return iseven(count_ones(x | y | z))
 
-    return Bool((res+1)%2)
+    #res = 0
+    #res += count_ones(x)
+    #res += count_ones(y)
+    #res += count_ones(z)
+    #return Bool((res+1)%2)
 end
 
 
@@ -219,8 +220,9 @@ end
 compute expectation value of PauliString `o` for a product state `ket`
 """
 function expectation_value_sign(pm::PauliMask{T,N}, ket::T) where {T,N}
-    is_diagonal(pm) || return 0.0
-    return (-1)^count_ones(pm.z & ket)%2
+    #is_diagonal(pm) || return 0.0
+    #return (-1)^count_ones(pm.z & ket)%2
+    return iseven(count_ones(pm.z & ket))
 end
 
 

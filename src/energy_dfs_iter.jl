@@ -161,38 +161,53 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
     # stack contains a list of branch points from which we want to explore all left (cos) branches
     # each time we create a branch we add the left (sin) root to the stack
     while length(stack) > 0
-        oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
-        path[ansatz_layer] = branch_direction
+        @inbounds oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
+        @inbounds path[ansatz_layer] = branch_direction
 
 
         for layer_idx in ansatz_layer:length(ansatz_ops)
 
             if abs(hi) < thresh 
-                _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
                 break
             end
 
-            g = ansatz_ops[layer_idx]
+            @inbounds g = ansatz_ops[layer_idx]
 
             if commute(g,oi)
-                path[layer_idx+1] = 0 
+                path[layer_idx+1] = Int8(0) 
                 continue
             end
             
             #if depth >= max_depth
             #    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
             #end
-
+                
+            if false
+            hr =  hi * vsin[layer_idx]
             phase, or = commutator(g, oi)
-            hr = real(1im*phase) * hi * vsin[layer_idx]
-
+            hr = real(1im*phase) * hr
             push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+            end
+
+            hr =  hi * vsin[layer_idx]
+            if abs(hr) > thresh 
+                phase, or = commutator(g, oi)
+                hr = real(1im*phase) * hr
+                push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+            else
+                phase, or = commutator(g, oi)
+                hr = real(1im*phase) * hr
+                path[layer_idx+1] = -1 
+                _found_leaf(ref_state, my_energy, my_gradient, or, hr, path, my_paths, vtan, vcot, thresh)
+            end
 
             # left branch
             hi = hi * vcos[layer_idx]
             path[layer_idx+1] = 1 
         end
 
+        #@code_warntype _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+        #error("here")
         _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
     end
 
@@ -403,10 +418,13 @@ end
 function _found_leaf_erf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh1) where {T}
 #={{{=#
     if is_diagonal(o)
-        sign = expectation_value_sign(o, ref_state) 
 
         #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
-        ei = sign*h
+        
+        ei = h
+        if expectation_value_sign(o, ref_state) == false
+            ei = -ei
+        end
         
         erfe = erf(ei*ei/thresh1/thresh1)
         energy[1] += ei * erfe
@@ -439,28 +457,48 @@ end
 function _found_leaf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh) where {T}
 #={{{=#
     if is_diagonal(o)
-        sign = expectation_value_sign(o, ref_state) 
-
         #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
-        ei = sign*h
-        
+        #ei = sign*h
+       
+        ei = h
+        if expectation_value_sign(o, ref_state) == false
+            ei = -ei
+        end
         energy[1] += ei
         npaths[1] += 1
                 
         # compute gradient contribution
-        for p in 1:length(vtan)
-            if path[p+1] == Int8(1)
-                gradient[p] +=  -2 * ei * vtan[p]
-            elseif path[p+1] == Int8(-1)
-                gradient[p] +=  2 * ei * vcot[p]
-            end
-        end
+        #@btime _compute_gradient_contribution!($gradient, $vtan, $vcot, $path, $ei)
+        #@code_warntype _compute_gradient_contribution!(gradient, vtan, vcot, path, ei)
+        #error("here")
+        
+        _compute_gradient_contribution!(gradient, vtan, vcot, path, ei)
+        
+        #for p in 1:length(vtan)
+        #    @inbounds if path[p+1] == Int8(1)
+        #        @inbounds gradient[p] +=  -2 * ei * vtan[p]
+        #    elseif path[p+1] == Int8(-1)
+        #        @inbounds gradient[p] +=  2 * ei * vcot[p]
+        #    end
+        #end
 
     else
         npaths[2] += 1
     end
 end
 #=}}}=#
+
+function _compute_gradient_contribution!(gradient::Vector{T}, vtan::Vector{T}, vcot::Vector{T}, path::Vector{TT}, ei::T) where {T, TT<:Integer}
+    tmp = 2*ei
+
+    for p in 1:length(vtan)
+        @inbounds if path[p+1] == TT(1)
+            @inbounds gradient[p] +=  -tmp * vtan[p]
+        elseif path[p+1] == TT(-1)
+            @inbounds gradient[p] +=  tmp * vcot[p]
+        end
+    end
+end
 
 
 function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; clip=1e-8, max_depth=20, thresh=1e-6)
