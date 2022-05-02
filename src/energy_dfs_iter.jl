@@ -34,7 +34,7 @@ end
 """
     compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20)
 """
-function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, thresh1=1e-6, max_depth=20, verbose=0)
+function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; clip=1e-8, thresh=1e-6, max_depth=20, verbose=0)
     #={{{=#
 
     energy = 0.0
@@ -42,14 +42,13 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     npath_zero = 0
     gradient = deepcopy(ansatz_par)
     fill!(gradient, zero(0))
-    #hi = 2
-    #println(ham_par[hi])
+    
     for hi in 1:length(ham_ops)
         f = iterate_dfs!(ref_state, 
                          ham_ops[hi], ham_par[hi], 
                          ansatz_ops, ansatz_par, 
                          thresh=thresh, 
-                         thresh1=thresh1,
+                         #clip=clip,
                          max_depth=max_depth)
 
         energy += f[1]
@@ -68,10 +67,9 @@ end
 
 """
 """
-function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
+function iterate_dfs_old!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
                       ansatz_par::Vector{T}; 
-                      thresh=1e-15, 
-                      thresh1=1e-12,
+                      thresh=1e-12,
                       max_depth=20) where {T,N, P<:Pauli}
 #={{{=#
     vcos = cos.(2 .* ansatz_par)
@@ -100,11 +98,10 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
         path[ansatz_layer] = branch_direction
 
         if ansatz_layer == length(ansatz_ops)+1
-            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
 
-        #elseif abs(hi) < thresh
-        elseif abs(hi * erf(hi*hi/thresh1/thresh1)) < thresh
-            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+        elseif abs(hi) < thresh
+            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
         else
 
             g = ansatz_ops[ansatz_layer]
@@ -112,7 +109,7 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
                 push!(stack, (oi, hi, ansatz_layer+1, depth, 0))
             else
                 if depth >= max_depth
-                    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+                    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
                 end
 
                 phase, or = commutator(g, oi)
@@ -127,6 +124,217 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
             end
         end
     end
+    return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
+end
+#=}}}=#
+
+"""
+loop over each cos branch
+"""
+function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
+                      ansatz_par::Vector{T}; 
+                      thresh=1e-12,
+                      max_depth=20) where {T,N, P<:Pauli}
+#={{{=#
+    vcos = cos.(2 .* ansatz_par)
+    vsin = sin.(2 .* ansatz_par)
+    vcot = cot.(2 .* ansatz_par)
+    vtan = tan.(2 .* ansatz_par)
+    depth = 0
+
+    path = zeros(Int8, length(ansatz_ops)+1)
+
+
+    # oi, hi, ansatz_layer, depth, branch_direction
+    stack = Stack{Tuple{typeof(o), Float64, Int, Int, Int8}}()  
+    
+    push!(stack, (o,h,1,1,0)) 
+
+    my_energy::Vector{T} = [0.0]
+    my_paths::Vector{Int} = [0, 0]
+    
+    my_gradient = deepcopy(ansatz_par)
+    fill!(my_gradient, zero(0))
+
+    thresh2 = thresh*thresh
+
+    # stack contains a list of branch points from which we want to explore all left (cos) branches
+    # each time we create a branch we add the left (sin) root to the stack
+    while length(stack) > 0
+        oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
+        path[ansatz_layer] = branch_direction
+
+
+        for layer_idx in ansatz_layer:length(ansatz_ops)
+
+            if abs(hi) < thresh 
+                _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+                break
+            end
+
+            g = ansatz_ops[layer_idx]
+
+            if commute(g,oi)
+                path[layer_idx+1] = 0 
+                continue
+            end
+            
+            #if depth >= max_depth
+            #    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+            #end
+
+            phase, or = commutator(g, oi)
+            hr = real(1im*phase) * hi * vsin[layer_idx]
+
+            push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+
+            # left branch
+            hi = hi * vcos[layer_idx]
+            path[layer_idx+1] = 1 
+        end
+
+        _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+    end
+
+    return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
+end
+#=}}}=#
+
+"""
+"""
+function iterate_dfs_erf_old!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
+                      ansatz_par::Vector{T}; 
+                      clip=1e-15, 
+                      thresh=1e-12,
+                      max_depth=20) where {T,N, P<:Pauli}
+#={{{=#
+    vcos = cos.(2 .* ansatz_par)
+    vsin = sin.(2 .* ansatz_par)
+    vcot = cot.(2 .* ansatz_par)
+    vtan = tan.(2 .* ansatz_par)
+    depth = 0
+
+    path = zeros(Int8, length(ansatz_ops)+1)
+   
+    stack = Stack{Tuple{typeof(o),Float64,Int,Int, Int8}}()  
+    #stack = Stack{Tuple{typeof(o),Float64,Int,Int}}(undef,1000)  
+    #stack = Vector{Tuple{typeof(o),Float64,Int,Int}}()  
+
+    
+    push!(stack, (o,h,1,1,0)) 
+
+    my_energy::Vector{T} = [0.0]
+    my_paths::Vector{Int} = [0, 0]
+    
+    my_gradient = deepcopy(ansatz_par)
+    fill!(my_gradient, zero(0))
+
+    while length(stack) > 0
+        oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
+        path[ansatz_layer] = branch_direction
+
+        if ansatz_layer == length(ansatz_ops)+1
+            _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+
+        #elseif abs(hi) < thresh
+        elseif abs(hi * erf(hi*hi/thresh/thresh)) < clip 
+            _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+        else
+
+            g = ansatz_ops[ansatz_layer]
+            if commute(g,oi)
+                push!(stack, (oi, hi, ansatz_layer+1, depth, 0))
+            else
+                if depth >= max_depth
+                    _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+                end
+
+                phase, or = commutator(g, oi)
+                hr = real(1im*phase) * hi * vsin[ansatz_layer]
+                #hr = 0.5*real(1im*phase) * hi * vsin[ansatz_layer]
+
+                push!(stack, (or, hr, ansatz_layer+1, depth+1, -1))
+
+                # left branch
+                hl = hi * vcos[ansatz_layer]
+                push!(stack, (oi, hl, ansatz_layer+1, depth, 1))
+            end
+        end
+    end
+    return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
+end
+#=}}}=#
+
+
+"""
+loop over each cos branch
+"""
+function iterate_dfs_erf!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
+                      ansatz_par::Vector{T}; 
+                      clip=1e-15, 
+                      thresh=1e-12,
+                      max_depth=20) where {T,N, P<:Pauli}
+#={{{=#
+    vcos = cos.(2 .* ansatz_par)
+    vsin = sin.(2 .* ansatz_par)
+    vcot = cot.(2 .* ansatz_par)
+    vtan = tan.(2 .* ansatz_par)
+    depth = 0
+
+    path = zeros(Int8, length(ansatz_ops)+1)
+
+
+    # oi, hi, ansatz_layer, depth, branch_direction
+    stack = Stack{Tuple{typeof(o), Float64, Int, Int, Int8}}()  
+    
+    push!(stack, (o,h,1,1,0)) 
+
+    my_energy::Vector{T} = [0.0]
+    my_paths::Vector{Int} = [0, 0]
+    
+    my_gradient = deepcopy(ansatz_par)
+    fill!(my_gradient, zero(0))
+
+    thresh2 = thresh*thresh
+
+    # stack contains a list of branch points from which we want to explore all left (cos) branches
+    # each time we create a branch we add the left (sin) root to the stack
+    while length(stack) > 0
+        oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
+        path[ansatz_layer] = branch_direction
+
+
+        for layer_idx in ansatz_layer:length(ansatz_ops)
+
+            if abs(hi * erf(hi*hi/thresh2)) < clip 
+                _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+                break
+            end
+
+            g = ansatz_ops[layer_idx]
+
+            if commute(g,oi)
+                path[layer_idx+1] = 0 
+                continue
+            end
+            
+            #if depth >= max_depth
+            #    _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
+            #end
+
+            phase, or = commutator(g, oi)
+            hr = real(1im*phase) * hi * vsin[layer_idx]
+
+            push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+
+            # left branch
+            hi = hi * vcos[layer_idx]
+            path[layer_idx+1] = 1 
+        end
+
+        _found_leaf_erf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+    end
+
     return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
 end
 #=}}}=#
@@ -192,7 +400,7 @@ end
 #=}}}=#
 
 
-function _found_leaf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh1) where {T}
+function _found_leaf_erf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh1) where {T}
 #={{{=#
     if is_diagonal(o)
         sign = expectation_value_sign(o, ref_state) 
@@ -228,19 +436,46 @@ end
 #=}}}=#
 
 
-function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20, thresh1=1e-6)
+function _found_leaf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh) where {T}
+#={{{=#
+    if is_diagonal(o)
+        sign = expectation_value_sign(o, ref_state) 
+
+        #@printf(" Found energy contribution %12.8f at ansatz layer %5i and depth %5i\n", sign*h, ansatz_layer, depth)
+        ei = sign*h
+        
+        energy[1] += ei
+        npaths[1] += 1
+                
+        # compute gradient contribution
+        for p in 1:length(vtan)
+            if path[p+1] == Int8(1)
+                gradient[p] +=  -2 * ei * vtan[p]
+            elseif path[p+1] == Int8(-1)
+                gradient[p] +=  2 * ei * vcot[p]
+            end
+        end
+
+    else
+        npaths[2] += 1
+    end
+end
+#=}}}=#
+
+
+function optimize_params(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; clip=1e-8, max_depth=20, thresh=1e-6)
 
     #ecurr = 0.0
     #gcurr = zeros(length(ansatz_par)) 
     iter = 0
-    ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh, thresh1=thresh1)
+    ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, clip=clip, thresh=thresh)
     
     function func(p::Vector{Float64})
-        ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, thresh=thresh, thresh1=thresh1)
+        ecurr, gcurr = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, clip=clip, thresh=thresh)
         return ecurr 
     end
     function grad(g::Vector{Float64}, p::Vector{Float64})
-        et, gt = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, thresh=thresh, thresh1=thresh1)
+        et, gt = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, p, clip=clip, thresh=thresh)
         g .= gt
         return gcurr
     end
