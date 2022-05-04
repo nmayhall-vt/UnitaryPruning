@@ -63,7 +63,7 @@ t_list = []
 for i in 1:6
     thresh = 10.0^(-i)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=1e-8, thresh1=thresh)
+    t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, clip=1e-8, thresh=thresh)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     println(ei)
     push!(e_list, ei)
@@ -75,7 +75,7 @@ for ti in 1:length(t_list)
     @printf(" %12.8f %12.1e\n", e_list[ti], t_list[ti])
 end
 e_hf = -17.084018547385366
-ref_val = -17.21643699
+ref_val = -17.24509797
 
 
 #for i in 2:4

@@ -2,13 +2,26 @@ using Distributed
 using LinearAlgebra
 using Optim
 using SpecialFunctions
+using PushVectors
+using Statistics 
+
+"""
+https://github.com/emerali/PushVectors.jl/blob/pop/src/PushVectors.jl
+"""
+function Base.pop!(v::PushVector)
+    isempty(v) && throw(ArgumentError("vector must be non-empty"))
+    x = v.parent[v.len]
+    v.len -= 1
+    x
+end
+
 """
     compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20)
 """
-function compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20)
+function compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par; thresh=1e-8, max_depth=20, verbose=0)
 #={{{=#
    
-    energy, npath_nonzero, npath_zero = @distributed (.+) for hi in 1:length(ham_ops)
+    energy, gradient, npath_nonzero, npath_zero = @distributed (.+) for hi in 1:length(ham_ops)
         #ei = expectation_value_sign(ham_ops[hi], ref_state) * ham_par[hi] 
         #e_hf += ei
     
@@ -25,8 +38,10 @@ function compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, an
     #@printf(" E(HF)     = %12.8f\n", e_hf)
     #@printf(" E(cADAPT) = %12.8f\n", energy[1])
     #@printf(" %% Contributing Branches %12.4f %%  Tot: %i\n", paths[1]/sum(paths)*100, sum(paths[1]) )
-    @printf(" E(cADAPT) = %12.8f  #Diagonal Paths %12i  #Nondiagonal Paths %12i\n", energy, npath_nonzero, npath_zero)
-    return energy 
+    if verbose>0
+        @printf(" E(cADAPT) = %12.8f  Grad = %8.1e #Diagonal Paths %12i  #Nondiagonal Paths %12i\n", energy, norm(gradient), npath_nonzero, npath_zero)
+    end
+    return energy, gradient 
 end
 #=}}}=#
 
@@ -42,7 +57,7 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     npath_zero = 0
     gradient = deepcopy(ansatz_par)
     fill!(gradient, zero(0))
-    
+   
     for hi in 1:length(ham_ops)
         f = iterate_dfs!(ref_state, 
                          ham_ops[hi], ham_par[hi], 
@@ -51,15 +66,17 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
                          #clip=clip,
                          max_depth=max_depth)
 
+        
         energy += f[1]
         gradient .+= f[2]
         npath_nonzero += f[3]
         npath_zero += f[4]
     end
+
     if verbose>0
         @printf(" E(cADAPT) = %12.8f  Grad = %8.1e #Diagonal Paths %12i  #Nondiagonal Paths %12i\n", energy, norm(gradient), npath_nonzero, npath_zero)
     end
-    return energy, gradient 
+    return energy, gradient
 end
 #=}}}=#
 
@@ -147,6 +164,7 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
 
     # oi, hi, ansatz_layer, depth, branch_direction
     stack = Stack{Tuple{typeof(o), Float64, Int, Int, Int8}}()  
+    #stack = PushVector{Tuple{typeof(o), Float64, Int, Int, Int8}}()  
     
     push!(stack, (o,h,1,1,0)) 
 
@@ -158,6 +176,8 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
 
     thresh2 = thresh*thresh
 
+    clip=1e-12
+
     # stack contains a list of branch points from which we want to explore all left (cos) branches
     # each time we create a branch we add the left (sin) root to the stack
     while length(stack) > 0
@@ -167,6 +187,7 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
 
         for layer_idx in ansatz_layer:length(ansatz_ops)
 
+            #if abs(hi * erf(hi*hi/thresh2)) < clip 
             if abs(hi) < thresh 
                 break
             end
@@ -182,23 +203,20 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
             #    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
             #end
                 
-            if false
             hr =  hi * vsin[layer_idx]
             phase, or = commutator(g, oi)
             hr = real(1im*phase) * hr
             push!(stack, (or, hr, layer_idx+1, depth+1, -1))
-            end
 
-            hr =  hi * vsin[layer_idx]
-            if abs(hr) > thresh 
+            if false
                 phase, or = commutator(g, oi)
-                hr = real(1im*phase) * hr
-                push!(stack, (or, hr, layer_idx+1, depth+1, -1))
-            else
-                phase, or = commutator(g, oi)
-                hr = real(1im*phase) * hr
-                path[layer_idx+1] = -1 
-                _found_leaf(ref_state, my_energy, my_gradient, or, hr, path, my_paths, vtan, vcot, thresh)
+                hr = hi * real(1im*phase) * vsin[layer_idx]
+                if abs(hr) > thresh 
+                    push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+                else
+                    #path[layer_idx+1] = -1 
+                    _found_leaf(ref_state, my_energy, my_gradient, or, hr, path, my_paths, vtan, vcot, thresh)
+                end
             end
 
             # left branch
@@ -415,7 +433,7 @@ end
 #=}}}=#
 
 
-function _found_leaf_erf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh1) where {T}
+function _found_leaf_erf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h, path::Vector{Int8}, npaths::Vector{Int}, vtan, vcot, thresh) where {T}
 #={{{=#
     if is_diagonal(o)
 
@@ -426,12 +444,12 @@ function _found_leaf_erf(ref_state, energy::Vector{T}, gradient::Vector{T}, o, h
             ei = -ei
         end
         
-        erfe = erf(ei*ei/thresh1/thresh1)
+        erfe = erf(ei*ei/thresh/thresh)
         energy[1] += ei * erfe
         npaths[1] += 1
                 
         #dfde = erfe 
-        dfde = erfe + 4*ei*ei*exp(-(ei/thresh1)^4)/thresh1/thresh1/sqrt(pi)
+        dfde = erfe + 4*ei*ei*exp(-(ei/thresh)^4)/thresh/thresh/sqrt(pi)
 
         #println(path)
         # compute gradient contribution
@@ -492,9 +510,10 @@ function _compute_gradient_contribution!(gradient::Vector{T}, vtan::Vector{T}, v
     tmp = 2*ei
 
     for p in 1:length(vtan)
-        @inbounds if path[p+1] == TT(1)
+        @inbounds pp = path[p+1]
+         if pp == TT(1)
             @inbounds gradient[p] +=  -tmp * vtan[p]
-        elseif path[p+1] == TT(-1)
+        elseif pp == TT(-1)
             @inbounds gradient[p] +=  tmp * vcot[p]
         end
     end
