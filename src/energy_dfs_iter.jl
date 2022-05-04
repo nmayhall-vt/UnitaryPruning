@@ -59,6 +59,9 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
     fill!(gradient, zero(0))
    
     for hi in 1:length(ham_ops)
+        
+        #hi == 2 || continue
+
         f = iterate_dfs!(ref_state, 
                          ham_ops[hi], ham_par[hi], 
                          ansatz_ops, ansatz_par, 
@@ -177,56 +180,74 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
     thresh2 = thresh*thresh
 
     clip=1e-12
+            
+    branch_method = 2
 
     # stack contains a list of branch points from which we want to explore all left (cos) branches
     # each time we create a branch we add the left (sin) root to the stack
     while length(stack) > 0
+
         @inbounds oi, hi, ansatz_layer, depth, branch_direction = pop!(stack)
         @inbounds path[ansatz_layer] = branch_direction
 
-
+        layer_curr = ansatz_layer
         for layer_idx in ansatz_layer:length(ansatz_ops)
 
-            #if abs(hi * erf(hi*hi/thresh2)) < clip 
-            if abs(hi) < thresh 
-                break
-            end
+            layer_curr = layer_idx
 
-            @inbounds g = ansatz_ops[layer_idx]
-
-            if commute(g,oi)
-                path[layer_idx+1] = Int8(0) 
-                continue
-            end
-            
-            #if depth >= max_depth
-            #    _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh1)
-            #end
+            if branch_method == 1
                 
-            hr =  hi * vsin[layer_idx]
-            phase, or = commutator(g, oi)
-            hr = real(1im*phase) * hr
-            push!(stack, (or, hr, layer_idx+1, depth+1, -1))
-
-            if false
-                phase, or = commutator(g, oi)
-                hr = hi * real(1im*phase) * vsin[layer_idx]
-                if abs(hr) > thresh 
-                    push!(stack, (or, hr, layer_idx+1, depth+1, -1))
-                else
-                    #path[layer_idx+1] = -1 
-                    _found_leaf(ref_state, my_energy, my_gradient, or, hr, path, my_paths, vtan, vcot, thresh)
+                if abs(hi) < thresh 
+                    break
                 end
+            
+                @inbounds g = ansatz_ops[layer_idx]
+                if commute(g,oi)
+                    path[layer_idx+1] = Int8(0) 
+                    continue
+                end
+
+                # right branch
+                phase, or = commutator(g, oi)
+                hr =  hi * real(1im*phase) * vsin[layer_idx]
+                push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+                
+                # left branch
+                hi = hi * vcos[layer_idx]
+                path[layer_idx+1] = 1 
+
+            elseif branch_method == 2
+                #if abs(hi) < thresh 
+                #    break
+                #end
+                
+                @inbounds g = ansatz_ops[layer_idx]
+                if commute(g,oi)
+                    path[layer_idx+1] = Int8(0) 
+                    continue
+                end
+                
+                # should we branch?
+                if depth <= max_depth
+                    phase, or = commutator(g, oi)
+                    hr = hi * real(1im*phase) * vsin[layer_idx]
+                    
+                    if abs(hr) > thresh 
+                        push!(stack, (or, hr, layer_idx+1, depth+1, -1))
+                    end
+                end
+                # left branch
+                hi = hi * vcos[layer_idx]
+                path[layer_idx+1] = 1 
             end
 
-            # left branch
-            hi = hi * vcos[layer_idx]
-            path[layer_idx+1] = 1 
+
         end
 
-        #@code_warntype _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
-        #error("here")
-        _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+        if layer_curr == length(ansatz_ops)
+            _found_leaf(ref_state, my_energy, my_gradient, oi, hi, path, my_paths, vtan, vcot, thresh)
+        end
+
     end
 
     return my_energy[1], my_gradient, my_paths[1], my_paths[2] 

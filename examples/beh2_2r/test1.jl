@@ -8,64 +8,30 @@ using Printf
 np = pyimport("numpy")
 pickle = pyimport("pickle")
 
-@everywhere T = UInt
+T = UInt
 
-#dir = "./examples/beh2_2r/"
 dir = "./"
-@everywhere ref_state = [1,1,1,1,1,1,0,0,0,0,0,0,0,0]
-@everywhere N = length(ref_state) 
-include("./read_in.jl")
-
-@everywhere ham_ops = $ham_ops
-@everywhere ham_par = $ham_par
-@everywhere ansatz_ops = $ansatz_ops
-@everywhere ansatz_par = $ansatz_par
+ref_state = [1,1,1,1,1,1,0,0,0,0,0,0,0,0]
+N = length(ref_state) 
 
 
-#function mypickle(filename, obj)
-#    out = open(filename,"w")
-#    pickle.dump(obj, out)
-#    close(out)
-# end
-#
-#function myunpickle(filename)
-#    r = nothing
-#    @pywith pybuiltin("open")(filename,"rb") as f begin
-#        r = pickle.load(f)
-#    end
-#    return r
-#end
-#
-#grouped = myunpickle(dir*"ansatz_ops_grouped.pkl")
-#for i in grouped
-#    tmp::Vector{Tuple{PauliString{N},Float64}} = []
-#    for j in i
-#        println(j[2], " ", abs(j[1]))
-#        push!(tmp, (PauliString(j[2]), real(-1.0im*j[1])))
-#    end
-#    push!(ansatz_ops_grouped, tmp)
-#    println()
-#end
-#
-#for a in ansatz_ops_grouped
-#    for i in a
-#        for j in a
-#            commute(i[1], j[1]) || error("here")
-#        end
-#    end
-#end
-
+if nprocs() > 1
+    @everywhere ref_state = $ref_state 
+    @everywhere include("./read_in.jl")
+    @everywhere T = $T
+    @everywhere N = $N
+else
+    include("./read_in.jl")
+end
 
 e_list = []
 e_list2 = []
 thresh_list = []
 t_list = []
-for i in 1:6
+for i in 2:8
     thresh = 10.0^(-i)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, clip=1e-8, thresh=thresh)
-    #t = @elapsed ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
-    println(ei)
+    t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, clip=1e-8, thresh=thresh, verbose=1)
     push!(e_list, ei)
     #push!(e_list2, ei2)
     push!(thresh_list, thresh)
@@ -76,7 +42,8 @@ for ti in 1:length(t_list)
 end
 e_hf = -17.084018547385366
 ref_val = -17.24509797
-
+#ref_val = -2.23298977
+#ref_val = -2.23298944
 
 #for i in 2:4
 #    thresh = 10.0^(-i)
@@ -84,11 +51,13 @@ ref_val = -17.24509797
 #end
 
 #plot(thresh_list, [e_list .- ref_val, e_list2 .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
-plot(thresh_list, [e_list .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
-     label = ["classical ADAPT" "HF"], 
+#plot(thresh_list, [e_list .- ref_val, [e_hf-ref_val for i in 1:length(e_list)]],  
+plot(thresh_list, [abs.(e_list .- ref_val), ],  
+     label = ["classical ADAPT",], 
      lw = 3, 
      marker=true,
-     xaxis=:log)
+     xaxis=:log,
+     yaxis=:log)
 xlabel!("Threshold")
 ylabel!("Error, au")
 title!("BeH2 @ 2.39A")
