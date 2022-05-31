@@ -5,6 +5,7 @@ from openfermion import fermi_hubbard, get_ground_state, get_sparse_operator
 import vqe_methods
 import pyscf_helper
 import operator_pools
+import openfermion_tools
 
 import scipy
 import pyscf
@@ -13,6 +14,21 @@ from pyscf import tools
 import pickle
 import numpy as np
 import copy as cp
+
+def convert_to_strings(op):
+    """
+    Convert a qubit operator to a list of things to write to disk
+    """
+    ops_list = []
+    par_list = []
+    for term in op:
+        str_tmp = ["I",]*n_qubits
+        for key in term.terms.keys():
+            for q in key:
+                str_tmp[q[0]] = q[1]
+            ops_list.append("".join(str_tmp))
+            par_list.append(term.terms[key])
+    return ops_list, par_list
 
 r = 1.0 
 geometry = [('H', (0, 0,   0*r)),
@@ -137,17 +153,38 @@ for i_idx, i in enumerate(ansatz):
             term_list.append((-1*term.terms[key]*params[i_idx], "".join(str_tmp)))
     ansatz_ops_grouped.append(term_list) 
 
-# for i_idx, i in enumerate(jw_ham):
-for term in jw_ham:
-    str_tmp = ["I",]*n_qubits
-    for key in term.terms.keys():
-        # print(key)
-        for q in key:
-            str_tmp[q[0]] = q[1]
-        # print("".join(str_tmp), term.terms[key])
-        ham_ops.append("".join(str_tmp))
-        ham_par.append(term.terms[key])
+## for i_idx, i in enumerate(jw_ham):
+#for term in jw_ham:
+#    str_tmp = ["I",]*n_qubits
+#    for key in term.terms.keys():
+#        # print(key)
+#        for q in key:
+#            str_tmp[q[0]] = q[1]
+#        # print("".join(str_tmp), term.terms[key])
+#        ham_ops.append("".join(str_tmp))
+#        ham_par.append(term.terms[key])
 
+ham_ops, ham_par = convert_to_strings(jw_ham)
+
+Na, Nb = openfermion_tools.make_N_fermion_operator(n_orb)
+Na = openfermion.transforms.jordan_wigner(Na)
+Nb = openfermion.transforms.jordan_wigner(Nb)
+#Na = [openfermion.transforms.jordan_wigner(i) for i in Na]
+#Nb = [openfermion.transforms.jordan_wigner(i) for i in Nb]
+
+Na_ops, Na_par = convert_to_strings(Na)
+Nb_ops, Nb_par = convert_to_strings(Nb)
+
+for i in Na_ops:
+    print(i)
+print()
+for i in Nb:
+    print(i)
+Na_mat = openfermion.linalg.get_sparse_operator(Na, n_qubits=2*n_orb)
+Nb_mat = openfermion.linalg.get_sparse_operator(Nb, n_qubits=2*n_orb)
+
+print(" Na: ", v.T @ (Na_mat@v))
+print(" Nb: ", v.T @ (Nb_mat@v))
 
 np.save('ham_ops.npy', ham_ops)
 np.save('ham_par.npy', ham_par)
@@ -155,6 +192,14 @@ np.save('ham_par.npy', ham_par)
 np.save('ansatz_ops.npy', ansatz_ops)
 np.save('ansatz_par.npy', ansatz_par)
 
+    
+np.save('Na_ops.npy', Na_ops)
+np.save('Na_par.npy', Na_par)
+np.save('Nb_ops.npy', Nb_ops)
+np.save('Nb_par.npy', Nb_par)
+
+#print(np.load('Na.npy'))
+#print(np.load('ham_ops.npy'))
 fileObj = open('ansatz_ops_grouped.pkl', 'wb')
 pickle.dump(ansatz_ops_grouped, fileObj)
 fileObj.close()

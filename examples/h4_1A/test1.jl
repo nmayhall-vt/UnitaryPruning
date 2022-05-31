@@ -32,6 +32,7 @@ for i in 2:9
     thresh = 10.0^(-i)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_iter_parallel(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     t = @elapsed ei,gi = UnitaryPruning.compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh, verbose=1)
+    #ni,ngi = UnitaryPruning.compute_expectation_value_iter(ref_state, Na_ops, Na_par, ansatz_ops, ansatz_par, thresh=thresh, verbose=1)
     #t = @elapsed ei = UnitaryPruning.compute_expectation_value_recurse(ref_state, ham_ops, ham_par, ansatz_ops, ansatz_par, thresh=thresh)
     push!(e_list, ei)
     push!(g_list, gi)
@@ -44,7 +45,7 @@ for t in t_list
 end
 e_hf = -4.5599680231
 ref_val = -4.60060768
-do_log = false 
+do_log = true 
 if do_log
     plot(thresh_list, [abs.(e_list .- ref_val), [e_hf-ref_val for i in 1:length(e_list)]],  
          label = ["classical ADAPT" "HF"], 
@@ -58,9 +59,6 @@ else
          marker=true,
          xaxis=:log)
 end
-xlabel!("Threshold")
-ylabel!("Error, au")
-title!("H4 @ 1A")
 
 
 
