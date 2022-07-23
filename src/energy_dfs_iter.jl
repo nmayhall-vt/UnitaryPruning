@@ -63,6 +63,7 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
         #hi == 2 || continue
 
         f = iterate_dfs!(ref_state, 
+                         #ham_ops[hi], 1.0, 
                          ham_ops[hi], ham_par[hi], 
                          ansatz_ops, ansatz_par, 
                          thresh=thresh, 
@@ -71,6 +72,7 @@ function compute_expectation_value_iter(ref_state, ham_ops, ham_par, ansatz_ops,
 
         
         energy += f[1]
+        #energy += f[1]*ham_par[hi]
         gradient .+= f[2]
         npath_nonzero += f[3]
         npath_zero += f[4]
