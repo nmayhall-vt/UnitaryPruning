@@ -31,6 +31,7 @@ export countI
 export countX
 export countY
 export countZ
+export commute_check
 
 
 end # module

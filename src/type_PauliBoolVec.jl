@@ -37,7 +37,7 @@ function multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     z = p1.z .⊻ p2.z
     θ = (p1.θ + p2.θ ) % 4
     # println(p1.θ, " ", p2.θ)
-    θ += 2*count(p1.x .& p2.z) % 4
+    θ = (θ + 2*count(p1.x .& p2.z)) % 4
     # println(θ)
     return PauliBoolVec{N}(θ,x,z)
 end
@@ -54,6 +54,16 @@ end
 
 function Base.:(==)(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     return (p1.θ == p2.θ) & all(p1.x .== p2.x) & all(p1.z .== p2.z) 
+end
+
+
+"""
+    commute_check(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+
+TBW
+"""
+function commute_check(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+    return iseven(count(p1.x .& p2.z) - count(p1.z .& p2.x)) 
 end
 
 
