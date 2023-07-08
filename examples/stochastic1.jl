@@ -1,8 +1,11 @@
 using UnitaryPruning
 using Plots
+using Statistics
+using Printf
+using Random
 
-function run(;α=.1, k=2)
-    N = 6
+function run(;α=.1, k=10)
+    N = 10 
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
 
@@ -15,6 +18,11 @@ function run(;α=.1, k=2)
             push!(generators, pi)
             push!(parameters, π / 2)
         end
+            
+        #pbc 
+        pi = PauliBoolVec(N, Z=[N, 1])
+        push!(generators, pi)
+        push!(parameters, π / 2)
 
         ## X layer
         # e^{i αn Pn}
@@ -31,26 +39,49 @@ function run(;α=.1, k=2)
     # o = PauliBoolVec(N,X=[1],Y=[2],Z=[3])
 
     #Mz
-    o = to_matrix(PauliBoolVec(N, Z=[1]))
-    for i in 2:N
-        o .+= to_matrix(PauliBoolVec(N, Z=[i]))
-    end
+    o = PauliBoolVec(N, Z=[1])
+    o_mat = to_matrix(o)
+    # for i in 2:N
+    #     o .+= to_matrix(PauliBoolVec(N, Z=[i]))
+    # end
 
-    tan_params = tan.(parameters)
-    sin_params = sin.(parameters)
-    cos_params = cos.(parameters)
 
     U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
+    
+    # Ui = UnitaryPruning.build_time_evolution_matrix([generators[2]], [parameters[2]])
+    # Uj = exp(to_matrix(generators[2]) .* 1im .* parameters[2])
 
-    m = diag(U*o*U')
-    # println(" expectation values:")
-    # display(m)
-    return real(m[1]) 
+    # display(norm(Ui - Uj))
+
+    # out = [mean(results[1:i]) for i in 1:length(results)]
+    # plot(real(results))
+    m = diag(U*o_mat*U')
+    println(" expectation values:")
+    display(m[1])
+    
+    ket = zeros(Bool, N)
+    Random.seed!(2)
+    results = []
+    for i in 1:1000000
+        push!(results, UnitaryPruning.stochastic_pauli_dynamics_run(generators, parameters, o, ket))
+    end
+    @printf(" Mean: %12.8f Stdev: %12.8f\n", mean(results), std(results))
+
+    out = [results[1]]
+    for (idx,i) in enumerate(results)
+        idx > 1 || continue
+        push!(out, (out[idx-1]*(idx-1)+i)/idx)
+    end
+
+    return real(m), out 
 end
 
-vals = [];
-for i in 1:20
-    push!(vals, run(α=0.1, k=i))
-end
+run()
 
-plot(vals, marker = :circle)
+
+# vals = [];
+# for i in 1:40
+#     push!(vals, run(α=0.05, k=i))
+# end
+
+# plot(vals, marker = :circle)

@@ -16,6 +16,7 @@ include("type_PauliMask.jl")
 include("conversions.jl")
 include("dfs.jl")
 include("energy_dfs_iter.jl")
+include("stochastic_evolution.jl")
 
 export PauliString
 export PauliBoolVec
