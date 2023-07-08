@@ -12,7 +12,7 @@ using BenchmarkTools
     display(a*b)
     @test c == a*b 
 
-    @test commute_check(a,b) == false
+    @test commute(a,b) == false
     
     c.θ = 0
     @test c == b*a 
@@ -28,6 +28,18 @@ using BenchmarkTools
     @test c == a*b 
     @test c == b*a
     
-    @test commute_check(a,b) == true 
+    @test commute(a,b) == true 
 
+    display(UnitaryPruning.is_diagonal(a))
+
+    
+    a = PauliBoolVec("IIZIZIIII")
+    v = Vector{Bool}([1,1,1,0,0,0,0,0,0])
+    @test expectation_value_sign(a,v) == -1
+    
+    v = Vector{Bool}([1,1,0,1,0,0,0,0,0])
+    @test expectation_value_sign(a,v) == 1
+    
+    v = Vector{Bool}([1,1,1,1,1,0,0,0,0])
+    @test expectation_value_sign(a,v) == 1
 end

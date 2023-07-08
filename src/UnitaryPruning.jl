@@ -31,7 +31,6 @@ export countI
 export countX
 export countY
 export countZ
-export commute_check
-
+export to_matrix
 
 end # module

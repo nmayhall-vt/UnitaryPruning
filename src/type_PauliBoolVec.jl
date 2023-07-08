@@ -23,6 +23,39 @@ end
 
 
 """
+    PauliBoolVec(N, X::Vector, Y::Vector, Z::Vector)
+
+constructor for creating PauliBoolVec by specifying the qubits where each X, Y, and Z gates exist 
+"""
+function PauliBoolVec(N::Integer; X=[], Y=[], Z=[])
+    for i in X
+        i ∉ Y || throw(DimensionMismatch)
+        i ∉ Z || throw(DimensionMismatch)
+    end
+    for i in Y
+        i ∉ Z || throw(DimensionMismatch)
+    end
+    
+    p = PauliBoolVec{N}(0, zeros(N), zeros(N))
+   
+    for i in X
+        p.x[i] = true
+    end
+    for i in Y
+        p.x[i] = true
+        p.z[i] = true
+    end
+    for i in Z
+        p.z[i] = true
+    end
+    return p
+end
+
+function nick(;a=[])
+    display(a)
+end
+
+"""
     multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 
 TBW
@@ -52,6 +85,11 @@ function Base.:*(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 end
 
 
+"""
+    Base.:(==)(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+
+TBW
+"""
 function Base.:(==)(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     return (p1.θ == p2.θ) & all(p1.x .== p2.x) & all(p1.z .== p2.z) 
 end
@@ -60,17 +98,59 @@ end
 """
     commute_check(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 
-TBW
+Do Pauli strings `p1` and `p2` commute?
 """
-function commute_check(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+function commute(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     return iseven(count(p1.x .& p2.z) - count(p1.z .& p2.x)) 
+end
+
+
+function to_matrix(p::PauliBoolVec{N}, T=ComplexF64) where N
+    x = [0 1; 1 0]
+    y = [0 1; -1 0]
+    z = [1 0; 0 -1]
+    I = [1 0; 0 1]
+
+    out = zeros(T, 2, 2)
+    if p.x[1] == 1 && p.z[1] == 1
+        out .= y
+    elseif p.x[1] == 1 && p.z[1] == 0
+        out .= x
+    elseif p.x[1] == 0 && p.z[1] == 1
+        out .= z
+    elseif p.x[1] == 0 && p.z[1] == 0
+        out .= I
+    end
+    
+    for i in 2:N
+        if p.x[i] == 1 && p.z[i] == 1 
+            out = kron(out, y)
+        elseif p.x[i] == 1 && p.z[i] == 0 
+            out = kron(out, x)
+        elseif p.x[i] == 0 && p.z[i] == 1
+            out = kron(out, z)
+        elseif p.x[i] == 0 && p.z[i] == 0
+            out = kron(out, I)
+        end
+    end
+    return (1im)^p.θ .* out
+end
+
+
+"""
+    is_diagonal(p::PauliBoolVec{N}) where N
+
+is `p` diagonal? (i.e., comprised of only I and Z operators)
+"""
+function is_diagonal(p::PauliBoolVec{N}) where N
+    return count(p.x) == 0
 end
 
 
 """
     Base.display(p::PauliBoolVec{N}) where {N}
 
-TBW
+Display
 """
 function Base.display(p::PauliBoolVec{N}) where {N}
     str = ""
@@ -130,4 +210,46 @@ Return the number of Z pauli's in `p`
 """
 function countZ(p::PauliBoolVec{N}) where {N}
     return count(p.z .& (p.x .⊻ p.z))
+end
+
+
+"""
+    expectation_value_sign(o::PauliString{N}, ket::Vector) where N
+
+compute expectation value of PauliString `o` for a product state `ket`
+"""
+function expectation_value_sign(p::PauliBoolVec{N}, ket::Vector{Bool}) where N
+    length(ket) == N || error(" ket and paulistring don't match") 
+   
+    is_diagonal(p) || return 0.0
+
+    count(p.z .& ket) % 2 == 0 || return -1
+    return 1
+    
+    # sign = 1
+    # for i in 1:N
+    #     if o.z[i] == 1
+    #         if ket[i] == 1
+    #             sign = -sign
+    #         end
+    #     end
+    # end
+    # return sign
+end
+
+"""
+    build_time_evolution_matrix(gs::Vector{PauliBoolVec{N}}, angles::Vector)
+
+TBW
+"""
+function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles::Vector) where {N}
+    U = to_matrix(PauliBoolVec(N))
+    Nt = length(generators)
+    length(angles) == Nt || throw(DimensionMismatch)
+    for t in 1:Nt
+        α = angles[t]
+        # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
+        U = cos(α) .* U .+ 1im*sin(α) .* U * to_matrix(generators[t])
+    end
+    return U
 end
