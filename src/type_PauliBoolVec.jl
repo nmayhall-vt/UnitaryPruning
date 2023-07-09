@@ -223,8 +223,8 @@ function expectation_value_sign(p::PauliBoolVec{N}, ket::Vector{Bool}) where N
    
     is_diagonal(p) || return 0.0
 
-    count(p.z .& ket) % 2 == 0 || return -1
-    return 1
+    count(p.z .& ket) % 2 == 0 || return -(1im)^p.θ
+    return (1im)^p.θ 
     
     # sign = 1
     # for i in 1:N
@@ -240,7 +240,8 @@ end
 """
     build_time_evolution_matrix(gs::Vector{PauliBoolVec{N}}, angles::Vector)
 
-TBW
+
+Build the Unitary matrix: exp(i αn Pn / 2) ⋯ exp(i α2 P2 / 2) exp(i α1 P1 / 2)
 """
 function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles::Vector) where {N}
     U = to_matrix(PauliBoolVec(N))
@@ -249,7 +250,8 @@ function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles
     for t in 1:Nt
         α = angles[t]
         # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
-        U = cos(α) .* U .+ 1im*sin(α) .* U * to_matrix(generators[t])
+        U = cos(α/2) .* U   .+   1im * sin(α/2) .* to_matrix(generators[t]) * U 
     end
     return U
 end
+

@@ -5,37 +5,47 @@ using Printf
 using Random
 using LinearAlgebra
 
-function run(;α=.01, k=10)
-    N = 6 
-    generators = Vector{PauliBoolVec{N}}([])
-    parameters = Vector{Float64}([])
+function run(;ga=1.23)
+    N = 8 
 
-    # Loop over trotter steps
-    for ki in 1:k
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
-        ## ZZ layer
-        for i in 1:N-1
-            pi = PauliBoolVec(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π)
-        end
-            
-        #pbc 
-        pi = PauliBoolVec(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π )
+    I = PauliBoolVec(N)
+    g = PauliBoolVec(N,X=[1,2], Y=[3], Z=[5,6])
+    o = PauliBoolVec(N,X=[3], Y=[1,2], Z=[5,8])
+    ga = 1.23
 
-        ## X layer
-        # e^{i αn Pn / 2}
-        for i in 1:N
-            pi = PauliBoolVec(N, X=[i])
-            push!(generators, pi)
-            push!(parameters, α)
-        end
+    omat = to_matrix(o)
+    gmat = to_matrix(g)
+    Imat = to_matrix(I)
+    display(commute(o,g))
+
+    # Test exponential
+    U1 = exp(1im * ga * gmat ./ 2)
+    U2 = cos(ga/2) .* Imat .+ 1im * sin(ga/2) .* gmat
+    println("exponential expression")
+    display(norm(U1-U2))
+ 
+    # Test transformation
+
+    omat1 = U1*omat*U1'
+    omat2 = cos(ga) .* omat .+ 1im * sin(ga) .* gmat*omat
+    display(norm(omat1 - omat2))
+
+    ket = zeros(Bool,N)
+    e1 = expectation_value_sign(o,ket)
+    e2 = expectation_value_sign(multiply(g,o),ket)
+
+    println("numerical")
+    display(omat1[1])
+    println("analytical")
+    display(cos(ga)*e1 + 1im * sin(ga)*e2)
+    return
+    Nt = length(generators)
+    length(angles) == Nt || throw(DimensionMismatch)
+    for t in 1:Nt
+        α = angles[t]
+        # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
+        u = cos(α) .* u .+ 1im*sin(α) .* u * to_matrix(generators[t])
     end
-
-    # o = PauliBoolVec(N,X=[1],Y=[2],Z=[3])
-
     #Mz
     o = PauliBoolVec(N, Z=[1])
     o_mat = to_matrix(o)
@@ -53,11 +63,9 @@ function run(;α=.01, k=10)
 
     # out = [mean(results[1:i]) for i in 1:length(results)]
     # plot(real(results))
-    m = diag(U'*o_mat*U)
+    m = diag(U*o_mat*U')
     println(" expectation values:")
     display(m[1])
-   
-    # return real(m[1])
     
     ket = zeros(Bool, N)
     Random.seed!(1)
@@ -75,15 +83,15 @@ function run(;α=.01, k=10)
         push!(out, (out[idx-1]*(idx-1)+i)/idx)
     end
 
-    return real(m[1]), out 
+    return real(m), out 
 end
 
-run(;α=.002,k=10)
+run()
 
 
 # vals = [];
 # for i in 1:40
-#     push!(vals, run(α=0.1, k=i))
+#     push!(vals, run(α=0.05, k=i))
 # end
 
 # plot(vals, marker = :circle)

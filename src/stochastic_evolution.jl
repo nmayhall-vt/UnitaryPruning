@@ -13,27 +13,32 @@ function stochastic_pauli_dynamics_run(generators::Vector{PauliBoolVec{N}}, angl
     # U' O U = cos(θ/2) O + i sin(θ/2) PO
     nt = length(generators)
     length(angles) == nt || throw(DimensionMismatch)
-    
-    sin_params = sin.(angles./2)
-    cos_params = cos.(angles./2)
-    tan_params = tan.(angles./2) 
-    # tan_params = tan.(angles.*2) .* tan.(angles.*2)
-    # bias = tan.(parameters .+ 2\pi)
+   
+    path = zeros(Int,nt)
+    bias = sin.(angles) ./ (sin.(angles) .+ cos.(angles))
+    # bias = sin.(angles).^2 
   
     for t in reverse(1:nt)
         g = generators[t]
         commute(o,g) == false || continue
 
-        branch = 0 #cosine branch
-        if rand() < tan_params[t]
+        path[t] = -1
+        
+        if rand() < bias[t]
             # sin branch
+           
+            # println("sin: ", bias[t])
+            # error("here")
             o = multiply(o,g)
             o.θ = (o.θ + 1) % 2
+
+            path[t] = 1
         end
+        # display(o)
         # @printf("%4i ", t)
         # println(o) 
     end
 
-    return expectation_value_sign(o,ket) * (1im)^o.θ
+    return expectation_value_sign(o,ket), path
 
 end
