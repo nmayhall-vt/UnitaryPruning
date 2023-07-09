@@ -41,8 +41,8 @@ function run(;ga=1.23)
  
     # Test transformation
 
-    omat1 = U1*omat*U1'
-    omat2 = cos(ga) .* omat .+ 1im * sin(ga) .* gmat*omat
+    omat1 = U1'*omat*U1
+    omat2 = cos(ga) .* omat .- 1im * sin(ga) .* gmat*omat
     
     println()
     println("transformation expression:")
@@ -52,56 +52,13 @@ function run(;ga=1.23)
     e1 = expectation_value_sign(o,ket)
     e2 = expectation_value_sign(multiply(g,o),ket)
 
+    println()
     println("numerical")
     display(omat1[1])
+    println()
     println("analytical")
-    display(cos(ga)*e1 + 1im * sin(ga)*e2)
-    return
-    Nt = length(generators)
-    length(angles) == Nt || throw(DimensionMismatch)
-    for t in 1:Nt
-        α = angles[t]
-        # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
-        u = cos(α) .* u .+ 1im*sin(α) .* u * to_matrix(generators[t])
-    end
-    #Mz
-    o = PauliBoolVec(N, Z=[1])
-    o_mat = to_matrix(o)
-    # for i in 2:N
-    #     o .+= to_matrix(PauliBoolVec(N, Z=[i]))
-    # end
-
-
-    U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
+    display(cos(ga)*e1 - 1im * sin(ga)*e2)
     
-    # Ui = UnitaryPruning.build_time_evolution_matrix([generators[2]], [parameters[2]])
-    # Uj = exp(to_matrix(generators[2]) .* 1im .* parameters[2])
-
-    # display(norm(Ui - Uj))
-
-    # out = [mean(results[1:i]) for i in 1:length(results)]
-    # plot(real(results))
-    m = diag(U*o_mat*U')
-    println(" expectation values:")
-    display(m[1])
-    
-    ket = zeros(Bool, N)
-    Random.seed!(1)
-    results = Vector{ComplexF64}([])
-    for i in 1:10000
-        e, path = UnitaryPruning.stochastic_pauli_dynamics_run(generators, parameters, o, ket)
-        # display(path)
-        push!(results, e)
-    end
-    @printf(" Mean: %12.8f Stdev: %12.8f\n", mean(results), std(results))
-
-    out = [results[1]]
-    for (idx,i) in enumerate(results)
-        idx > 1 || continue
-        push!(out, (out[idx-1]*(idx-1)+i)/idx)
-    end
-
-    return real(m), out 
 end
 
 run()

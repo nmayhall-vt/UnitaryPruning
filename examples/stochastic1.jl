@@ -14,16 +14,16 @@ function run(;α=.01, k=10)
     for ki in 1:k
         # e^{i π/2 P2} e^{i π P1 /2}|ψ>
         ## ZZ layer
-        for i in 1:N-1
-            pi = PauliBoolVec(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π)
-        end
+        # for i in 1:N-1
+        #     pi = PauliBoolVec(N, Z=[i, i + 1])
+        #     push!(generators, pi)
+        #     push!(parameters, π)
+        # end
             
-        #pbc 
-        pi = PauliBoolVec(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π )
+        # #pbc 
+        # pi = PauliBoolVec(N, Z=[N, 1])
+        # push!(generators, pi)
+        # push!(parameters, π )
 
         ## X layer
         # e^{i αn Pn / 2}
@@ -60,10 +60,10 @@ function run(;α=.01, k=10)
     # return real(m[1])
     
     ket = zeros(Bool, N)
-    Random.seed!(1)
+    Random.seed!(2)
     results = Vector{ComplexF64}([])
-    for i in 1:10000
-        e, path = UnitaryPruning.stochastic_pauli_dynamics_run(generators, parameters, o, ket)
+    for i in 1:1000000
+        e, _ = UnitaryPruning.stochastic_pauli_dynamics_run(generators, parameters, o, ket)
         # display(path)
         push!(results, e)
     end
@@ -78,7 +78,7 @@ function run(;α=.01, k=10)
     return real(m[1]), out 
 end
 
-run(;α=.002,k=10)
+run(;α=.1,k=10)
 
 
 # vals = [];

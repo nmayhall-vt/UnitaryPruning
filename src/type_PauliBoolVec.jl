@@ -52,8 +52,18 @@ function PauliBoolVec(N::Integer; X=[], Y=[], Z=[])
     return p
 end
 
-function nick(;a=[])
-    display(a)
+"""
+    random_PauliBoolVec(N)
+
+Build random `PauliBoolVec`
+"""
+function random_PauliBoolVec(N)
+    ops = ["I", "X", "Y", "Z"]
+    str = ""
+    for i in 1:N
+        str = str * ops[rand(1:4)]
+    end
+    return PauliBoolVec(str)
 end
 
 """
@@ -251,6 +261,7 @@ function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles
     for t in 1:Nt
         α = angles[t]
         # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
+        # U = cos(α/2) .* U   .+   1im * sin(α/2) .* U * to_matrix(generators[t]) 
         U = cos(α/2) .* U   .+   1im * sin(α/2) .* to_matrix(generators[t]) * U 
     end
     return U
