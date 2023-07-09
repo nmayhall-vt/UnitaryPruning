@@ -6,14 +6,17 @@ using Random
 using LinearAlgebra
 
 function run(;α=.01, k=10, nsamples=10000)
-    N = 40 
+    
+    N = 40  # number of qubits
+
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
 
     # Loop over trotter steps
     for ki in 1:k
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
+        
         ## ZZ layer
+        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
         for i in 1:N-1
             pi = PauliBoolVec(N, Z=[i, i + 1])
             push!(generators, pi)
@@ -65,8 +68,8 @@ end
 
 
 vals = [];
-for i in 1:16
-    push!(vals, run(;α=i*π/32, k=6, nsamples=10000))
+for i in 0:16
+    push!(vals, run(;α=i*π/32, k=2, nsamples=100000))
     println(vals[end])
 end
 
