@@ -36,7 +36,8 @@ function PauliBoolVec(N::Integer; X=[], Y=[], Z=[])
         i ∉ Z || throw(DimensionMismatch)
     end
     
-    p = PauliBoolVec{N}(0, zeros(N), zeros(N))
+    θ = 3*length(Y) % 4
+    p = PauliBoolVec{N}(θ, zeros(N), zeros(N))
    
     for i in X
         p.x[i] = true
@@ -150,7 +151,7 @@ end
 """
     Base.display(p::PauliBoolVec{N}) where {N}
 
-Display
+Display, y = iY
 """
 function Base.display(p::PauliBoolVec{N}) where {N}
     str = ""
@@ -166,7 +167,7 @@ function Base.display(p::PauliBoolVec{N}) where {N}
             if p.z[i] == 0
                 str = str * "X"
             elseif p.z[i] == 1
-                str = str * "iY"
+                str = str * "y"
             end
         end
         if i < N
