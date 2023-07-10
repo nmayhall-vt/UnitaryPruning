@@ -7,7 +7,7 @@ using LinearAlgebra
 
 function run(;α=.01, k=10, nsamples=10000, seed=1)
     
-    N = 20  # number of qubits
+    N = 80  # number of qubits
 
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
@@ -74,7 +74,7 @@ end
 # e = run(;α=.01, k=100, nsamples=10000)
 
 nruns = 100
-nsamples = 1000
+nsamples = 10000
 
 e_avgs = [];
 e_vals = [];
@@ -88,6 +88,7 @@ for i in 0:16
         # push!(e, mean(real(ei)))
         # push!(v_vals, v)
         push!(etraj, ei)
+        println(ei[end])
     end
     push!(e_vals, etraj)
     avg = mean(e)
