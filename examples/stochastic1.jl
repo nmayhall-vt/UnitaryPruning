@@ -37,8 +37,8 @@ function run(;α=.01, k=10)
     # o = PauliBoolVec(N,X=[1],Y=[2],Z=[3])
 
     #Mz
-    # o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
-    o = PauliBoolVec(N, Z=[1])
+    o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
+    # o = PauliBoolVec(N, Z=[1])
     o_mat = to_matrix(o)
     # for i in 2:N
     #     o .+= to_matrix(PauliBoolVec(N, Z=[i]))

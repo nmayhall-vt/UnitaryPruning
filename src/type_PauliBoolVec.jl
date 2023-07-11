@@ -87,6 +87,25 @@ function multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 end
 
 """
+    multiply!(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+
+TBW
+"""
+function multiply!(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
+
+    # x = x1 + x2 % 2
+    # z = z1 + z2 % 2
+    # sign = x2 + z2
+
+    p1.x .= p1.x .⊻ p2.x
+    p1.z .= p1.z .⊻ p2.z
+    θ = (p1.θ + p2.θ ) % 4
+    # println(p1.θ, " ", p2.θ)
+    θ = (θ + 2*count(p1.x .& p2.z)) % 4
+    p1.θ = θ
+end
+
+"""
     Base.:*(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 
 TBW
@@ -267,3 +286,14 @@ function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles
     return U
 end
 
+
+"""
+    set!(o1::PauliBoolVec, o2::PauliBoolVec)
+
+TBW
+"""
+function set!(o1::PauliBoolVec{N}, o2::PauliBoolVec{N}) where N
+   o1.θ =  o2.θ
+   o1.x .=  o2.x
+   o1.z .=  o2.z
+end

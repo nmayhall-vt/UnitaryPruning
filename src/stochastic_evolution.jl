@@ -65,6 +65,58 @@ end
 
 TBW
 """
+function stochastic_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where N
+
+    o = deepcopy(o_in)
+    #
+    # for a single pauli Unitary, Un = exp(-i θn Pn/2)
+    # U' O U = cos(θ/2) O - i sin(θ/2) PO
+    nt = length(generators)
+    length(angles) == nt || throw(DimensionMismatch)
+
+    scales = sin.(angles) .+ cos.(angles) 
+    bias = sin.(angles) ./ scales
+        
+    # @btime stochastic_pauli_dynamics_walk($generators, $o, $ket, $bias, $scales)
+
+    expval = zeros(ComplexF64, nsamples)
+    for s in 1:nsamples
+        set!(o, o_in)
+        expval[s] = stochastic_pauli_dynamics_walk(generators, o, ket, bias, scales)
+    end
+    return expval
+end
+
+function stochastic_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
+
+    scale = 1.0
+    nt = length(generators)
+    for t in reverse(1:nt)
+        g = generators[t]
+        commute(o,g) == false || continue
+
+       
+        branch = rand() < bias[t]
+
+        # if branch is true, we consider sin branch, else consider cos
+
+        if branch 
+            # sin branch
+            multiply!(o,g)
+            o.θ = (o.θ + 1) % 4
+        end
+        scale *= scales[t]
+    end
+
+    return scale * expectation_value_sign(o,ket)
+end
+
+
+"""
+    stochastic_pauli_dynamics_run(generators::Vector{PauliBoolVec{N}}, angles, o::PauliBoolVec{N}) where N
+
+TBW
+"""
 function get_random_leaf(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket) where N
 
     o = deepcopy(o_in)
