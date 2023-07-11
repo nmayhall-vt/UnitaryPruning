@@ -37,6 +37,7 @@ function run(;α=.01, k=10)
     # o = PauliBoolVec(N,X=[1],Y=[2],Z=[3])
 
     #Mz
+    # o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
     o = PauliBoolVec(N, Z=[1])
     o_mat = to_matrix(o)
     # for i in 2:N
@@ -46,39 +47,21 @@ function run(;α=.01, k=10)
 
     U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
     
-    # Ui = UnitaryPruning.build_time_evolution_matrix([generators[2]], [parameters[2]])
-    # Uj = exp(to_matrix(generators[2]) .* 1im .* parameters[2])
-
-    # display(norm(Ui - Uj))
-
-    # out = [mean(results[1:i]) for i in 1:length(results)]
-    # plot(real(results))
     m = diag(U'*o_mat*U)
-    println(" expectation values:")
-    display(m[1])
+    # println(" expectation values:")
+    # display(m[1])
    
-    # return real(m[1])
-    
-    ket = zeros(Bool, N)
-    Random.seed!(2)
-    results = Vector{ComplexF64}([])
-    for i in 1:1000
-        e, _ = UnitaryPruning.stochastic_pauli_dynamics_run(generators, parameters, o, ket)
-        # display(path)
-        push!(results, e)
-    end
-    @printf(" Mean: %12.8f Stdev: %12.8f\n", mean(results), std(results))
-
-    out = [results[1]]
-    for (idx,i) in enumerate(results)
-        idx > 1 || continue
-        push!(out, (out[idx-1]*(idx-1)+i)/idx)
-    end
-
-    return real(m[1]), out 
+    return real(m[1])
 end
 
-run(;α=.01, k=30)
+# run(;α=.01, k=30)
+
+final_vals = []
+for i in 0:16
+    ei = run(α=i*π/32, k=5)
+    push!(final_vals, real(ei))
+    @printf(" α: %4i val: %12.8f\n", i, ei)
+end
 
 
 # vals = [];
@@ -86,4 +69,4 @@ run(;α=.01, k=30)
 #     push!(vals, run(α=0.1, k=i))
 # end
 
-# plot(vals, marker = :circle)
+plot(final_vals, marker = :circle)
