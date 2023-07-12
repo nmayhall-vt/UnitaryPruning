@@ -58,20 +58,19 @@ end
 end
 
 
-function run(;N=6, nruns=100, nsamples=1000)
+function run(;N=100, nruns=100, nsamples=1000)
 
     final_vals_stoc = []
     final_vals_errs = []
 
-    # for i in 7:8
-    for i in 0:16
+    for i in 8:8
 
         # Operator
         # o = PauliBoolVec(N, X=[13,29,31], Y=[9,30], Z=[8,12,17,28,32])
         # o = PauliBoolVec(N, Z=[1,2,3,4])
         o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
         # o = PauliBoolVec(N, Z=[1,30])
-        # o = PauliBoolVec(N, Z=[1])
+        o = PauliBoolVec(N, Z=[1,2])
         o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
 
         # State
@@ -107,10 +106,11 @@ function run(;N=6, nruns=100, nsamples=1000)
         @printf(" α: %4i avg: %12.8f ± %-12.6f var: %12.8f\n", i, avg_traj[end], std_traj[end], var_traj[end])
 
         # plot(trajectories, ylim=[-1,1], legend=false, color=:grey, alpha=.1)
-        plot(avg_traj, color=:black, ribbon=std_traj, ylim=[-1, 1], legend=false)
+        plot(avg_traj, color=:black, ribbon=std_traj, ylim=[-1, 1], legend=false, dpi=300)
         # plot!(avg_traj .+ std_traj, color=:red)
         # plot!(avg_traj .- std_traj, color=:red)
-        savefig(@sprintf "%05i.pdf" i)
+        filename = @sprintf "%05i.png" i
+        savefig(filename)
         push!(final_vals_stoc, avg_traj[end])
         push!(final_vals_errs, std_traj[end])
     end
@@ -123,4 +123,4 @@ end
 
 
 
-run(N=6, nruns=1000, nsamples=1000)
+run(N=6, nruns=1000, nsamples=10000000)

@@ -183,6 +183,15 @@ end
 Display, y = iY
 """
 function Base.display(p::PauliBoolVec{N}) where {N}
+    println(1im^p.θ,"|", string(p)) 
+end
+
+"""
+    Base.display(p::PauliBoolVec{N}) where {N}
+
+Display, y = iY
+"""
+function Base.string(p::PauliBoolVec{N}) where {N}
     str = ""
     for i in 1:N
         if p.x[i] == 0 
@@ -203,7 +212,7 @@ function Base.display(p::PauliBoolVec{N}) where {N}
             str = str * "⊗"
         end 
     end
-    println(1im^p.θ,"|", str) 
+    return str
 end
 
 """
