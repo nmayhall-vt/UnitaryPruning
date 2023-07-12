@@ -13,12 +13,14 @@ include("type_PauliString.jl")
 include("type_PauliBoolVec.jl")
 include("type_PauliBitString.jl")
 include("type_PauliMask.jl")
+include("type_Pauli128.jl")
 include("conversions.jl")
 include("dfs.jl")
 include("energy_dfs_iter.jl")
 include("stochastic_evolution.jl")
 include("sparse_pauli_dynamics.jl")
 
+export Pauli128
 export PauliString
 export PauliBoolVec
 export PauliBitString

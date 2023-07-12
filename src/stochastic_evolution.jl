@@ -65,7 +65,7 @@ end
 
 TBW
 """
-function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where N
+function randomized_pauli_dynamics(generators::Vector{P}, angles, o_in::P, ket; nsamples=1000) where {N,P<:Pauli}
 
     o = deepcopy(o_in)
     #
@@ -87,7 +87,30 @@ function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, 
     return expval
 end
 
-function randomized_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
+
+# function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where N
+
+#     o = deepcopy(o_in)
+#     #
+#     # for a single pauli Unitary, Un = exp(-i θn Pn/2)
+#     # U' O U = cos(θ/2) O - i sin(θ/2) PO
+#     nt = length(generators)
+#     length(angles) == nt || throw(DimensionMismatch)
+
+#     scales = sin.(angles) .+ cos.(angles) 
+#     bias = sin.(angles) ./ scales
+        
+#     # @btime stochastic_pauli_dynamics_walk($generators, $o, $ket, $bias, $scales)
+
+#     expval = zeros(ComplexF64, nsamples)
+#     for s in 1:nsamples
+#         set!(o, o_in)
+#         expval[s] = randomized_pauli_dynamics_walk(generators, o, ket, bias, scales)
+#     end
+#     return expval
+# end
+
+function randomized_pauli_dynamics_walk(generators::Vector{P}, o::P, ket, bias, scales) where P<:Pauli 
 
     scale = 1.0
     nt = length(generators)

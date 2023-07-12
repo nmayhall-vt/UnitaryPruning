@@ -58,20 +58,20 @@ end
 end
 
 
-function run(;N=100, nruns=100, nsamples=1000)
+function run(;N=100, nruns=100, nsamples=1000, T=PauliBoolVec{N})
 
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in 8:8
+    for i in 0:16
 
         # Operator
         # o = PauliBoolVec(N, X=[13,29,31], Y=[9,30], Z=[8,12,17,28,32])
         # o = PauliBoolVec(N, Z=[1,2,3,4])
         o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
         # o = PauliBoolVec(N, Z=[1,30])
-        o = PauliBoolVec(N, Z=[1,2])
         o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
+        o = PauliBoolVec(N, Z=[1,2])
 
         # State
         ket = zeros(Bool, N)
@@ -123,4 +123,4 @@ end
 
 
 
-run(N=6, nruns=1000, nsamples=10000000)
+run(N=6, nruns=100, nsamples=1000)
