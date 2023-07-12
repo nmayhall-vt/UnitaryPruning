@@ -9,7 +9,9 @@ using InteractiveUtils
 
 abstract type Pauli end
 
+include("helpers.jl")
 include("type_PauliString.jl")
+include("type_BasisState.jl")
 include("type_PauliBoolVec.jl")
 include("type_PauliBitString.jl")
 include("type_PauliMask.jl")
@@ -21,6 +23,7 @@ include("stochastic_evolution.jl")
 include("sparse_pauli_dynamics.jl")
 
 export Pauli
+export BasisState 
 export Ket128 
 export Pauli128
 export PauliString

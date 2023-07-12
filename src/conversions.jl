@@ -10,9 +10,9 @@ end
 
 
 """
-    PauliString(pbs::PauliBitString{T,N}) where {T,N}
+    PauliString(pbs::PauliBitString{N}) where {N}
 """
-function PauliString(pbs::PauliBitString{T,N}) where {T,N}
+function PauliString(pbs::PauliBitString{N}) where {N}
     str = []
     x = bitstring(pbs.x)
     z = bitstring(pbs.z)

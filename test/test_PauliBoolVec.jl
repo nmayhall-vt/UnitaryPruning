@@ -78,6 +78,7 @@ using Random
     angles = rand(20) 
     
     o = UnitaryPruning.random_PauliBoolVec(N)
+    o = UnitaryPruning.random_PauliBoolVec(N)
 
     for i in 1:20
         push!(generators, UnitaryPruning.random_PauliBoolVec(N))
@@ -128,4 +129,7 @@ using Random
 
     # # display(sin(par))
     # # display(1im*sin(par)*expectation_value_sign(multiply(o,g), ket))
+
+
+    v = BasisState(10,0)
 end

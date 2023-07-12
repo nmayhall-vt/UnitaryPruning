@@ -1,96 +1,191 @@
-
 """
-    PauliBitString{N} <: Operator 
+In this representation, the Pauli string operator is represented as two binary strings, one for x and one for z.
 
-In this representation, the Pauli string operator is represented as a binary string.
-Any possible Pauli string can be represented in this way, referred to as the symplectic representation
-which finds use in quantum error correction. 
-
+The format is as follows: Z^z1 X^x1 ⊗ Z^z2 X^x2 ⊗ ⋯ ⊗ Z^zN X^xN  
     
-    I : 0|0 
-    Z : 0|1 
-    X : 1|0 
-    Y : 1|1 
-
 Products of operators simply concatonate the left and right strings separately. For example, 
 
     XYZIY = 11001|01101
-
 """
-struct PauliBitString{T, N} <: Pauli 
-    x::T  
-    z::T
-    #function PauliBitString(str::String) where {N}
-    #    value = parse(U, string("0b", str))
-    #    nbits = length(str)
-    #    return new{nbits}(value)
-    #end
+struct PauliBitString{N} <: Pauli 
+    θ::UInt8
+    z::Int128
+    x::Int128
 end
 
 
-#Base.print(pbs::PauliBitString) = print(pbs.x, pbs.z)
-Base.println(pbs::PauliBitString) = println(string(pbs))
-Base.string(pbs::PauliBitString) = join([bitstring(pbs.x), "|", bitstring(pbs.z)]) 
+"""
+    PauliBitString(z::I, x::I) where I<:Integer
 
-function Base.print(pbs::PauliBitString{T,N}) where {T,N}
-    for i in N:1
-        print(i)
+TBW
+"""
+function PauliBitString(z::I, x::I) where I<:Integer
+    N = maximum(map(i -> ndigits(i, base=2), [x, z]))
+    θ = count_ones(z & x)*3 % 4
+    return PauliBitString{N}(θ, z, x)
+end
+
+"""
+    PauliBitString(str::String)
+
+TBW
+"""
+function PauliBitString(str::String)
+    for i in str
+        i in ['I', 'Z', 'X', 'Y'] || error("Bad string: ", str)
     end
+
+    x = Int128(0)
+    z = Int128(0)
+    ny = 0 
+    N = length(str)
+    idx = Int128(1)
+    two = Int128(2)
+    one = Int128(1)
+
+    for i in str
+        # println(i, " ", idx, typeof(idx))
+        if i in ['X', 'Y']
+            x |= two^(idx-one)
+            if i == 'Y'
+                ny += 1
+            end
+        end
+        if i in ['Z', 'Y']
+            z |= two^(idx-one)
+        end
+        idx += 1
+    end
+    θ = 3*ny%4
+    return PauliBitString{N}(θ, z,x) 
 end
 
 
 """
-    is_diagonal(pbs::PauliBitString)
+    PauliBoolVec(N, X::Vector, Y::Vector, Z::Vector)
+
+constructor for creating PauliBoolVec by specifying the qubits where each X, Y, and Z gates exist 
+"""
+function PauliBitString(N::Integer; X=[], Y=[], Z=[])
+    for i in X
+        i ∉ Y || throw(DimensionMismatch)
+        i ∉ Z || throw(DimensionMismatch)
+    end
+    for i in Y
+        i ∉ Z || throw(DimensionMismatch)
+    end
+    
+    str = ["I" for i in 1:N]
+    for i in X
+        str[i] = "X"
+    end
+    for i in Y
+        str[i] = "Y"
+    end
+    for i in Z
+        str[i] = "Z"
+    end
+   
+    # print(str[1:N])
+    return PauliBitString(join(str))
+    
+end
+
+
+
+"""
+    multiply(p1::PauliBitString{N}, θ1,  p2::PauliBitString{N}, θ2) where N
+
+TBW
+"""
+function multiply(p1::PauliBitString{N},  p2::PauliBitString{N}) where N
+    x = p1.x ⊻ p2.x
+    z = p1.z ⊻ p2.z
+    θ = (p1.θ + p2.θ ) % 4
+    θ = (θ + 2*count_ones(p1.x & p2.z)) % 4
+    return PauliBitString{N}(θ,x,z)
+end
+
+"""
+    is_diagonal(p::PauliBitString)
 
 Does this operator consist of only I and/or Z?
 """
-function is_diagonal(pbs::PauliBitString)
-    return pbs.x == 0
+function is_diagonal(p::PauliBitString)
+    return count_ones(p.x) == 0
 end
 
 """
-    n_non_eye(pbs::PauliBitString{T,N}) where {T,N}
+    Base.show(io::IO, P::PauliMask)
 
-Return number of non-identity (i.e., X, Y, or Z) in string
+TBW
 """
-function n_non_eye(pbs::PauliBitString{T,N}) where {T,N}
-    return count_ones(pbs.x | pbs.z)
-end
-
-"""
-"""
-#@inline function commute(pbs1::PauliBitString{T,N}, pbs2::PauliBitString{T,N}) where {T,N}
-#function commute(pbs1::PauliBitString{T,N}, pbs2::PauliBitString{T,N}) where {T,N}
-function commute(pbs1, pbs2)
-    return iseven(count_ones(pbs1.x & pbs2.z) - count_ones(pbs1.z & pbs2.x)) 
-    #return iseven(sum(pbs1.x & pbs2.z) - sum(pbs1.z & pbs2.x)) 
+function Base.show(io::IO, P::PauliBitString{N}) where N
+    print(io, string(P))
 end
 
 
 """
-    commutator(pbs1::PauliBitString, pbs2::PauliBitString)
+    Base.display(p::PauliBitString)
+
+Display, y = iY
 """
-function commutator(pbs1::PauliBitString{T,N}, pbs2::PauliBitString{T,N}) where {T,N}
-    #return 1im^(count_ones(pbs1.x & pbs2.z)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
-    #return -1im*1im^(count_ones(pbs1.x & pbs2.z) - count_ones(pbs1.z & pbs2.x)) * 1im^(count_ones(pbs1.x & pbs2.z)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
-    #return 1im^(-count_ones(pbs1.z & pbs2.x)),  PauliBitString{T,N}(pbs1.x ⊻ pbs2.x, pbs1.z ⊻ pbs2.z) 
-end
+function Base.string(p::PauliBitString{N}) where N
+    Iloc = get_on_bits(p.x ⊽ p.z)
+    yloc = get_on_bits(p.x & p.z)
+    Xloc = get_on_bits(p.x & ~p.z)
+    Zloc = get_on_bits(p.z & ~p.x)
+    out = ["I" for i in 1:128]
 
-
-function string_to_bits(str::String)
-    x = zeros(UInt8, length(str))
-    z = zeros(UInt8, length(str))
-    for (i_idx,i) in enumerate(str)
-        if i == "X"
-            x[i_idx] = 1
-        elseif i == "Y" 
-            x[i_idx] = 1
-            z[i_idx] = 1
-        elseif i == "Z" 
-            z[i_idx] = 1
-        end
+    for i in Xloc
+        out[i] = "X"
     end
-    return x,z
+    for i in yloc
+        out[i] = "y"
+    end
+    for i in Zloc
+        out[i] = "Z"
+    end
+    return join(out[1:N])
+end
+
+"""
+    random_PauliBitString(N)
+
+TBW
+"""
+function random_PauliBitString(N)
+    return PauliBitString{N}(rand(0:3), rand(Int128),rand(Int128))
+end
+
+"""
+    Base.:(==)(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+
+Check if they are equal, return true or false
+"""
+function Base.:(==)(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+    return p1.x == p2.x && p1.z == p2.z && p1.θ == p2.θ
 end
 
 
+"""
+    commute(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+
+Check if they commute, return true or false
+"""
+function commute(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+    return iseven(count_ones(p1.x & p2.z) - count_ones(p1.z & p2.x)) 
+end
+
+
+"""
+    expectation_value_sign(p::PauliBitString{N}, ket::Vector{Bool}) where N
+
+compute expectation value of PauliBitString `o` for a product state `ket`
+"""
+function expectation_value_sign(p::PauliBitString{N}, ket::BasisState{N}) where N
+    is_diagonal(p) || return 0.0
+
+    count_ones(p.z & ket.v) % 2 == 0 || return -(1im)^p.θ
+    return (1im)^p.θ 
+end
