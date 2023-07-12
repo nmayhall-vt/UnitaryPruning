@@ -9,7 +9,7 @@ using Distributed
     using SharedArrays
 end
 
-@everywhere function get_unitary_sequence_1D(o::Pauli128; α=.01, k=10, N=6)
+@everywhere function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
     generators = Vector{Pauli128}([])
     parameters = Vector{Float64}([])
     phases = Vector{Int}([])
@@ -45,7 +45,7 @@ end
     return (generators, phases), parameters
 end
 
-@everywhere function get_unitary_sequence_1D(o::PauliBoolVec;α=.01, k=10, N=6)
+@everywhere function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
    
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
@@ -94,12 +94,13 @@ end
 end
 
 
-function run(o::P, ket; nruns=100, nsamples=1000, N=6) where P<:Pauli
+function run(o, ket; nruns=100, nsamples=1000, N=6)
 
     final_vals_stoc = []
     final_vals_errs = []
 
     for i in 0:16
+    # for i in 8:8
 
 
 
@@ -158,19 +159,24 @@ function run2()
     o = PauliBoolVec(N, Y=[1], Z=[2, 3, 4])
     # o = PauliBoolVec(N, Z=[1,30])
     o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
-    o = PauliBoolVec(N, Z=[1, 2])
+    o = PauliBoolVec(N, X=[1,2], Y=[3], Z=[5,6])
+    o = PauliBoolVec(N, Z=[1])
         
     # State
     ket = zeros(Bool, N)
 
-    # run(o, ket, nruns=100, nsamples=1000, N=N)
+    run(o, ket, nruns=100, nsamples=1000, N=N)
 
+    println()
 
 
     # State
     ket = Int128(0) 
 
-    o2 = Pauli128(N, Z=[1, 2, 3])
-    run(o2[1], ket, nruns=100, nsamples=1000, N=N)
+    o = Pauli128(N, Z=[1, 2, 3, 4, 5, 6])
+    o = Pauli128(N, X=[1,2], Y=[3], Z=[5,6])
+    o = Pauli128(N, Z=[1])
+    
+    run(o, ket, nruns=100, nsamples=1000, N=N)
 end
 run2()

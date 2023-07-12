@@ -1,7 +1,9 @@
 using UnitaryPruning
 using Test
 using BenchmarkTools 
-
+using Printf
+using LinearAlgebra
+using Random
 @testset "PauliBoolVec" begin
 
     a = PauliBoolVec("XYZIXY")
@@ -34,14 +36,18 @@ using BenchmarkTools
 
     
     a = PauliBoolVec("IIZIZIIII")
+    b = Pauli128("IIZIZIIII")
     v = Vector{Bool}([1,1,1,0,0,0,0,0,0])
     @test expectation_value_sign(a,v) == -1
+    @test expectation_value_sign(b,Ket128(v).v) == -1
     
     v = Vector{Bool}([1,1,0,1,0,0,0,0,0])
     @test expectation_value_sign(a,v) == 1
+    @test expectation_value_sign(b,Ket128(v).v) == 1
     
     v = Vector{Bool}([1,1,1,1,1,0,0,0,0])
     @test expectation_value_sign(a,v) == 1
+    @test expectation_value_sign(b,Ket128(v).v) == 1
 
 
 
@@ -90,36 +96,36 @@ using BenchmarkTools
 
     #############################################################
 
-    o = PauliBoolVec("YZXZYZZY")
-    g = PauliBoolVec("XZXZXIZX")
+    # o = PauliBoolVec("YZXZYZZY")
+    # g = PauliBoolVec("XZXZXIZX")
     
-    display(o)
-    display(g)
-    ket = zeros(Bool, N)
-    par = 1.1
+    # display(o)
+    # display(g)
+    # ket = zeros(Bool, N)
+    # par = 1.1
 
-    println(" Do they commute?: ", commute(o,g))
+    # println(" Do they commute?: ", commute(o,g))
 
-    U1 = UnitaryPruning.build_time_evolution_matrix([g], [par])
-    e0 = to_matrix(o)[1]
-    e1 = (U1'*to_matrix(o)*U1)[1]
+    # U1 = UnitaryPruning.build_time_evolution_matrix([g], [par])
+    # e0 = to_matrix(o)[1]
+    # e1 = (U1'*to_matrix(o)*U1)[1]
    
-    e2 = expectation_value_sign(o,ket)
+    # e2 = expectation_value_sign(o,ket)
 
-    e3list = Vector{ComplexF64}([])
-    for i in 1:1000
-        ei, _ = UnitaryPruning.stochastic_pauli_dynamics_run([g], [par], o, ket)
-        push!(e3list, ei)
-    end
+    # e3list = Vector{ComplexF64}([])
+    # for i in 1:1000
+    #     ei, _ = UnitaryPruning.randomized_pauli_dynamics_walk([g], [par], o, ket)
+    #     push!(e3list, ei)
+    # end
   
-    plot(real(e3list))
-    e3 = mean(e3list)
+    # plot(real(e3list))
+    # e3 = mean(e3list)
 
-    @printf(" e0: %12.8f %12.8fi\n", real(e0), imag(e0))
-    @printf(" e1: %12.8f %12.8fi\n", real(e1), imag(e1))
-    @printf(" e2: %12.8f %12.8fi\n", real(e2), imag(e2))
-    @printf(" e3: %12.8f %12.8fi\n", real(e3), imag(e3))
+    # @printf(" e0: %12.8f %12.8fi\n", real(e0), imag(e0))
+    # @printf(" e1: %12.8f %12.8fi\n", real(e1), imag(e1))
+    # @printf(" e2: %12.8f %12.8fi\n", real(e2), imag(e2))
+    # @printf(" e3: %12.8f %12.8fi\n", real(e3), imag(e3))
 
-    # display(sin(par))
-    # display(1im*sin(par)*expectation_value_sign(multiply(o,g), ket))
+    # # display(sin(par))
+    # # display(1im*sin(par)*expectation_value_sign(multiply(o,g), ket))
 end

@@ -38,9 +38,10 @@ function run(;α=.01, k=10)
 
     #Mz
     o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
-    o = PauliBoolVec(N, Z=[1])
-    o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
     o = PauliBoolVec(N, Z=[1,2])
+    o = PauliBoolVec(N, X=[1,2], Y=[3], Z=[5,6])
+    o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
+    o = PauliBoolVec(N, Z=[1])
     
     o_mat = to_matrix(o)
 

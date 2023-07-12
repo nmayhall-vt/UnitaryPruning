@@ -21,6 +21,7 @@ include("stochastic_evolution.jl")
 include("sparse_pauli_dynamics.jl")
 
 export Pauli
+export Ket128 
 export Pauli128
 export PauliString
 export PauliBoolVec

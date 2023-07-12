@@ -41,7 +41,7 @@ function Pauli128(str::String)
     two = Int128(2)
     one = Int128(1)
 
-    for i in reverse(str)
+    for i in str
         # println(i, " ", idx, typeof(idx))
         if i in ['X', 'Y']
             x |= two^(idx-one)
@@ -89,6 +89,27 @@ function Pauli128(N::Integer; X=[], Y=[], Z=[])
     return Pauli128(join(str))
     
 end
+
+
+##############################################################################
+
+struct Ket128
+    v::Int128
+end
+           
+function Ket128(vec::Vector)
+    one = Int128(1)
+    two = Int128(2)
+
+    v = Int128(0)
+    for i in 1:length(vec)
+        if vec[i] == 1
+            v |= two^(i-one)
+        end
+    end
+    return Ket128(v)
+end
+##############################################################################
 
 """
     multiply(p1::Pauli128{N}, θ1,  p2::Pauli128{N}, θ2) where N
@@ -146,7 +167,7 @@ function Base.string(p::Pauli128{N}) where N
     for i in Zloc
         out[i] = "Z"
     end
-    return join(reverse(out[1:N]))
+    return join(out[1:N])
 end
 
 function get_on_bits(x::T) where T<:Integer
@@ -209,3 +230,15 @@ function expectation_value_sign(p::Pauli128{N}, ket::Int128) where N
     return 1 
 end
 
+"""
+    expectation_value_sign(p::Tuple{Pauli128{N}, Int}, ket::Int128) where N
+
+compute expectation value of Pauli128 `o` for a product state `ket`
+    `p[1]` is the `Pauli128` and `p[2]` is the associated phase
+"""
+function expectation_value_sign(p::Tuple{Pauli128{N}, Int}, ket::Int128) where N
+    is_diagonal(p[1]) || return 0.0
+
+    count_ones(p[1].z & ket) % 2 == 0 || return -(1im)^p[2]
+    return (1im)^p[2] 
+end

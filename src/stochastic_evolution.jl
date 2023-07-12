@@ -66,7 +66,7 @@ using Random
 
 TBW
 """
-function randomized_pauli_dynamics(generators, angles, o_in, ket; nsamples=1000) where {N}
+function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in, ket; nsamples=1000) where {N}
 
     o = deepcopy(o_in)
     #
@@ -82,13 +82,37 @@ function randomized_pauli_dynamics(generators, angles, o_in, ket; nsamples=1000)
 
     expval = zeros(ComplexF64, nsamples)
     for s in 1:nsamples
-        if o isa Pauli128
-            o = o_in
-        else
-            set!(o, o_in)
-        end
+        set!(o, o_in)
         expval[s] = randomized_pauli_dynamics_walk(generators, o, ket, bias, scales)
     end
+    return expval
+end
+
+
+
+"""
+    randomized_pauli_dynamics(generators, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where {N}
+
+TBW
+"""
+function randomized_pauli_dynamics(generators::Tuple{Vector{Pauli128}, Vector{Int}}, angles, o::Tuple{Pauli128, Int}, ket; nsamples=1000) where {N}
+
+    #
+    # for a single pauli Unitary, Un = exp(-i θn Pn/2)
+    # U' O U = cos(θ/2) O - i sin(θ/2) PO
+    # nt = length(angles)
+    # length(angles) == nt || throw(DimensionMismatch)
+
+    scales = sin.(angles) .+ cos.(angles) 
+    bias = sin.(angles) ./ scales
+       
+    # @btime stochastic_pauli_dynamics_walk($generators, $o, $ket, $bias, $scales)
+
+    expval = zeros(ComplexF64, nsamples)
+    for s in 1:nsamples
+        expval[s] = randomized_pauli_dynamics_walk(generators, o, ket, bias, scales)
+    end
+    # println(expval)
     return expval
 end
 
@@ -149,14 +173,16 @@ end
 
 TBW
 """
-function randomized_pauli_dynamics_walk(generatortuple::Tuple{Vector{Pauli128}, Vector{Int}}, o::Pauli128, ket, bias, scales)
+function randomized_pauli_dynamics_walk(generator_tuple::Tuple{Vector{Pauli128}, Vector{Int}}, o_in::Tuple{Pauli128, Int}, ket, bias, scales)
 
-    generators = generatortuple[1]
-    phases = generatortuple[2]
-
+    generators = generator_tuple[1]
+    phases = generator_tuple[2]
+    o = o_in[1]
+    θ = o_in[2]
+    
     scale = 1.0
-    θ = 1
     nt = length(generators)
+    
     for t in reverse(1:nt)
         g = generators[t]
         commute(o,g) == false || continue
@@ -173,8 +199,10 @@ function randomized_pauli_dynamics_walk(generatortuple::Tuple{Vector{Pauli128}, 
         end
         scale *= scales[t]
     end
-
-    return scale * expectation_value_sign(o,ket) * (1im)^θ
+   
+    val = scale * expectation_value_sign(o,ket) * (1im)^θ
+    # abs(val) < 1e-12 || println(val) 
+    return val 
 end
 
 """
