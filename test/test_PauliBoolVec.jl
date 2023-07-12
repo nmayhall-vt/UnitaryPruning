@@ -68,7 +68,25 @@ using Random
     @test abs(e1) < 1e-12
     @test abs(e2) < 1e-12
     @test abs(e3) < 1e-12
+    
+    
+    #############################################################
+    for i in 1:10
+        o = UnitaryPruning.random_PauliBoolVec(20)
+        g = UnitaryPruning.random_PauliBoolVec(20)
+        o2 = PauliBitString(o)
+        g2 = PauliBitString(g)
+        og = PauliBitString(multiply(o, g))
+        og2 = multiply(o2, g2)
 
+        @test og == og2
+
+
+        v = BasisState(20,rand(Int128))
+
+        UnitaryPruning.expectation_value_sign(o2,v)
+        
+    end
     #############################################################
 
 
@@ -131,5 +149,4 @@ using Random
     # # display(1im*sin(par)*expectation_value_sign(multiply(o,g), ket))
 
 
-    v = BasisState(10,0)
 end

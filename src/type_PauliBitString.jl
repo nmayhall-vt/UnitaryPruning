@@ -103,7 +103,7 @@ function multiply(p1::PauliBitString{N},  p2::PauliBitString{N}) where N
     z = p1.z ⊻ p2.z
     θ = (p1.θ + p2.θ ) % 4
     θ = (θ + 2*count_ones(p1.x & p2.z)) % 4
-    return PauliBitString{N}(θ,x,z)
+    return PauliBitString{N}(θ,z,x)
 end
 
 """
@@ -120,10 +120,15 @@ end
 
 TBW
 """
-function Base.show(io::IO, P::PauliBitString{N}) where N
-    print(io, string(P))
+function Base.show(io::IO, p::PauliBitString{N}) where N
+    # print(io, @sprintf "Pstring(P))
+    println(io, 1im^p.θ,"|", string(p)) 
 end
 
+
+function Base.:+(p::PauliBitString{N}, θ::Integer) where N
+    return PauliBitString{N}((p.θ + θ)%4, p.z, p.x)
+end
 
 """
     Base.display(p::PauliBitString)

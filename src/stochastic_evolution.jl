@@ -66,7 +66,7 @@ using Random
 
 TBW
 """
-function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in, ket; nsamples=1000) where {N}
+function randomized_pauli_dynamics(generators::Vector{P}, angles, o_in, ket; nsamples=1000) where {N,P<:Pauli}
 
     o = deepcopy(o_in)
     #

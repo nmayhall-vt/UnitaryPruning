@@ -4,7 +4,7 @@
 function PauliBitString(ps::PauliString{N}; T=UInt) where N
     x = join(collect(ps[i] == 'X' || ps[i] == 'Y' ? 1 : 0 for i in reverse(1:N)))
     z = join(collect(ps[i] == 'Z' || ps[i] == 'Y' ? 1 : 0 for i in reverse(1:N)))
-    return PauliBitString{T,N}(parse(T, x; base=2), parse(T, z; base=2))
+    return PauliBitString{T,N}(parse(T, z; base=2), parse(T, x; base=2))
 end
 
 
@@ -39,4 +39,18 @@ end
 function PauliString(pm::PauliMask{T,N}) where {T,N}
     str = pauli_to_pauli_string(pm)
     return PauliString{N}(reverse([i for i in str]))
+end
+
+function PauliBitString(p::PauliBoolVec{N}) where N
+    x = Int128(0)
+    z = Int128(0)
+    for i in 1:N
+        if p.x[i]
+            x |= Int128(2)^(i-1)
+        end
+        if p.z[i]
+            z |= Int128(2)^(i-1)
+        end
+    end
+    return PauliBitString{N}(p.θ, z, x)
 end
