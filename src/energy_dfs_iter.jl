@@ -153,11 +153,10 @@ end
 """
 loop over each cos branch
 """
-function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P}, 
-                      ansatz_par::Vector{T}; 
-                      thresh=1e-12,
-                      max_depth=20) where {T,N, P<:Pauli}
-#={{{=#
+function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
+    ansatz_par::Vector{T};
+    thresh=1e-12,
+    max_depth=20) where {T,N,P<:Pauli}
     vcos = cos.(2 .* ansatz_par)
     vsin = sin.(2 .* ansatz_par)
     vcot = cot.(2 .* ansatz_par)
@@ -254,7 +253,6 @@ function iterate_dfs!(ref_state, o::P, h::T, ansatz_ops::Vector{P},
 
     return my_energy[1], my_gradient, my_paths[1], my_paths[2] 
 end
-#=}}}=#
 
 """
 """
