@@ -20,6 +20,7 @@ include("energy_dfs_iter.jl")
 include("stochastic_evolution.jl")
 include("sparse_pauli_dynamics.jl")
 
+export Pauli
 export Pauli128
 export PauliString
 export PauliBoolVec

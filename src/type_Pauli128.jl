@@ -37,16 +37,20 @@ function Pauli128(str::String)
     z = Int128(0)
     ny = 0 
     N = length(str)
-    idx = 1
+    idx = Int128(1)
+    two = Int128(2)
+    one = Int128(1)
+
     for i in reverse(str)
+        # println(i, " ", idx, typeof(idx))
         if i in ['X', 'Y']
-            x |= 2^(idx-1)
+            x |= two^(idx-one)
             if i == 'Y'
                 ny += 1
             end
         end
         if i in ['Z', 'Y']
-            z |= 2^(idx-1)
+            z |= two^(idx-one)
         end
         idx += 1
     end
@@ -69,20 +73,21 @@ function Pauli128(N::Integer; X=[], Y=[], Z=[])
     end
     
     θ = 3*length(Y) % 4
-  
-    x = Int128(0)
-    z = Int128(0)
+
+    str = ["I" for i in 1:N]
     for i in X
-        x |= 2^(i-1)
+        str[i] = "X"
     end
     for i in Y
-        # x |= 2^(i-1)
-        # z |= 2^(i-1)
+        str[i] = "Y"
     end
     for i in Z
-        z |= 2^(i-1)
+        str[i] = "Z"
     end
-    return Pauli128{N}(z,x), θ
+   
+    # print(str[1:N])
+    return Pauli128(join(str))
+    
 end
 
 """
@@ -197,11 +202,10 @@ end
 
 compute expectation value of Pauli128 `o` for a product state `ket`
 """
-function expectation_value_sign(p::Pauli128{N}, ket::Vector{Bool}) where N
-    length(ket) == N || error(" ket and paulistring don't match") 
-   
+function expectation_value_sign(p::Pauli128{N}, ket::Int128) where N
     is_diagonal(p) || return 0.0
 
     count_ones(p.z & ket) % 2 == 0 || return -1
     return 1 
 end
+

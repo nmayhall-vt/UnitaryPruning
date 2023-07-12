@@ -9,8 +9,44 @@ using Distributed
     using SharedArrays
 end
 
-@everywhere function get_unitary_sequence_1D(;α=.01, k=10, N=6)
-    
+@everywhere function get_unitary_sequence_1D(o::Pauli128; α=.01, k=10, N=6)
+    generators = Vector{Pauli128}([])
+    parameters = Vector{Float64}([])
+    phases = Vector{Int}([])
+
+    # Loop over trotter steps
+    for ki in 1:k
+        
+        ## ZZ layer
+        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
+        for i in 1:N-1
+            pi, θ = Pauli128(N, Z=[i, i + 1])
+            push!(generators, pi)
+            push!(phases, θ)
+            push!(parameters, π)
+        end
+            
+        #pbc 
+        pi, θ = Pauli128(N, Z=[N, 1])
+        push!(generators, pi)
+        push!(phases, θ)
+        push!(parameters, π )
+
+        ## X layer
+        # e^{i αn Pn / 2}
+        for i in 1:N
+            pi, θ = Pauli128(N, X=[i])
+            push!(generators, pi)
+            push!(phases, θ)
+            push!(parameters, α)
+        end
+    end
+
+    return (generators, phases), parameters
+end
+
+@everywhere function get_unitary_sequence_1D(o::PauliBoolVec;α=.01, k=10, N=6)
+   
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
 
@@ -58,29 +94,20 @@ end
 end
 
 
-function run(;N=100, nruns=100, nsamples=1000, T=PauliBoolVec{N})
+function run(o::P, ket; nruns=100, nsamples=1000, N=6) where P<:Pauli
 
     final_vals_stoc = []
     final_vals_errs = []
 
     for i in 0:16
 
-        # Operator
-        # o = PauliBoolVec(N, X=[13,29,31], Y=[9,30], Z=[8,12,17,28,32])
-        # o = PauliBoolVec(N, Z=[1,2,3,4])
-        o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
-        # o = PauliBoolVec(N, Z=[1,30])
-        o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
-        o = PauliBoolVec(N, Z=[1,2])
 
-        # State
-        ket = zeros(Bool, N)
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
         std_traj = zeros(nsamples)
 
-        @everywhere generators, parameters = get_unitary_sequence_1D(α=$i * π / 32, k=5, N=$N)
+        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5, N=$N)
 
         avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
             generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
@@ -122,5 +149,28 @@ end
 
 
 
+function run2()
+    N = 6
 
-run(N=6, nruns=100, nsamples=1000)
+    # Operator
+    # o = PauliBoolVec(N, X=[13,29,31], Y=[9,30], Z=[8,12,17,28,32])
+    # o = PauliBoolVec(N, Z=[1,2,3,4])
+    o = PauliBoolVec(N, Y=[1], Z=[2, 3, 4])
+    # o = PauliBoolVec(N, Z=[1,30])
+    o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
+    o = PauliBoolVec(N, Z=[1, 2])
+        
+    # State
+    ket = zeros(Bool, N)
+
+    # run(o, ket, nruns=100, nsamples=1000, N=N)
+
+
+
+    # State
+    ket = Int128(0) 
+
+    o2 = Pauli128(N, Z=[1, 2, 3])
+    run(o2[1], ket, nruns=100, nsamples=1000, N=N)
+end
+run2()
