@@ -5,7 +5,7 @@ using Random
 
 TBW
 """
-function stochastic_pauli_dynamics_run(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket) where N
+function randomized_pauli_dynamics_run(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket) where N
 
     o = deepcopy(o_in)
     #
@@ -65,7 +65,7 @@ end
 
 TBW
 """
-function stochastic_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where N
+function randomized_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where N
 
     o = deepcopy(o_in)
     #
@@ -82,12 +82,12 @@ function stochastic_pauli_dynamics(generators::Vector{PauliBoolVec{N}}, angles, 
     expval = zeros(ComplexF64, nsamples)
     for s in 1:nsamples
         set!(o, o_in)
-        expval[s] = stochastic_pauli_dynamics_walk(generators, o, ket, bias, scales)
+        expval[s] = randomized_pauli_dynamics_walk(generators, o, ket, bias, scales)
     end
     return expval
 end
 
-function stochastic_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
+function randomized_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
 
     scale = 1.0
     nt = length(generators)
