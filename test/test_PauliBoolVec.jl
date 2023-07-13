@@ -9,7 +9,7 @@ using Random
     a = PauliBoolVec("XYZIXY")
     b = PauliBoolVec("YXXYZZ")
     c = PauliBoolVec("ZZYYYX")
-    c += 3
+    c += 1
     display(a)
     display(b)
     display(a*b)
@@ -18,8 +18,8 @@ using Random
 
     @test commute(a,b) == false
     
-    # c.θ = 0
-    # @test c == b*a 
+    c += 2 
+    @test c == b * a
     
     println() 
     a = PauliBitString("XYZIXY")
@@ -53,15 +53,15 @@ using Random
     b = PauliBitString("IIZIZIIII")
     v = Vector{Bool}([1,1,1,0,0,0,0,0,0])
     @test expectation_value_sign(a,v) == -1
-    @test expectation_value_sign(b,Ket128(v).v) == -1
+    @test expectation_value_sign(b,BasisState(v)) == -1
     
     v = Vector{Bool}([1,1,0,1,0,0,0,0,0])
     @test expectation_value_sign(a,v) == 1
-    @test expectation_value_sign(b,Ket128(v).v) == 1
+    @test expectation_value_sign(b,BasisState(v)) == 1
     
     v = Vector{Bool}([1,1,1,1,1,0,0,0,0])
     @test expectation_value_sign(a,v) == 1
-    @test expectation_value_sign(b,Ket128(v).v) == 1
+    @test expectation_value_sign(b,BasisState(v)) == 1
 
 
 

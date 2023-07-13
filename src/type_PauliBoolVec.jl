@@ -18,7 +18,7 @@ function PauliBoolVec(str::String)
     x = MVector{N, Bool}([i in ['X', 'Y'] for i in str])
     z = MVector{N, Bool}([i in ['Z', 'Y'] for i in str])
     θ = 3*count([i == 'Y' for i in str]) % 4
-    return PauliBoolVec{N}(θ, x, z)
+    return PauliBoolVec{N}(θ, z, x)
 end
 
 
@@ -79,7 +79,7 @@ function multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
 
     x = p1.x .⊻ p2.x
     z = p1.z .⊻ p2.z
-    θ = (p1.θ + p2.θ ) % 4
+    θ = (p1.θ + p2.θ ) 
     # println(p1.θ, " ", p2.θ)
     θ = (θ + 2*count(p1.x .& p2.z)) % 4
     # println(θ)
@@ -242,21 +242,25 @@ compute expectation value of PauliString `o` for a product state `ket`
 function expectation_value_sign(p::PauliBoolVec{N}, ket::Vector{Bool}) where N
     length(ket) == N || error(" ket and paulistring don't match") 
    
-    is_diagonal(p) || return 0.0
+    is_diagonal(p) || return 0
 
     count(p.z .& ket) % 2 == 0 || return -(1im)^p.θ
     return (1im)^p.θ 
     
-    # sign = 1
-    # for i in 1:N
-    #     if o.z[i] == 1
-    #         if ket[i] == 1
-    #             sign = -sign
-    #         end
-    #     end
-    # end
-    # return sign
 end
+
+# """
+#     expectation_value_sign(o::PauliString{N}, ket::Vector) where N
+
+# compute expectation value of PauliString `o` for a product state `ket`
+# """
+# function expectation_value_sign(p::PauliBoolVec{N}, ket::BasisState{N}) where N
+   
+#     is_diagonal(p) || return 0
+
+#     count(p.z .& ket) % 2 == 0 || return -(1im)^p.θ
+#     return (1im)^p.θ 
+# end
 
 """
     build_time_evolution_matrix(gs::Vector{PauliBoolVec{N}}, angles::Vector)

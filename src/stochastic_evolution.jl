@@ -1,27 +1,63 @@
 using Random
 
-
 """
-    stochastic_pauli_rotations(generators, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where {N}
+    stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
 
-TBW
+Stochastically sample the leaves of the binary tree where the probability of observing a leaf is proportional to its coefficient
 """
 function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
 
     #
-    # for a single pauli Unitary, Un = exp(-i θn Pn/2)
-    # U' O U = cos(θ/2) O - i sin(θ/2) PO
+    # for a single pauli Unitary, U = exp(-i θn Pn/2)
+    # U' O U = cos(θ) O + i sin(θ) OP
+    
     nt = length(angles)
-    # length(angles) == nt || throw(DimensionMismatch)
+    length(angles) == nt || throw(DimensionMismatch)
 
+    # 
+    # Precompute the trig values to avoid doing so within the loop over samples
     scales = sin.(angles) .+ cos.(angles) 
     bias = sin.(angles) ./ scales
        
     # @btime stochastic_pauli_rotations_walk($generators, $o, $ket, $bias, $scales)
 
+    #
+    # collect our results here...
     expval = zeros(ComplexF64, nsamples)
+   
+    # 
+    # loop over number of samples for this run 
     for s in 1:nsamples
-        expval[s] = stochastic_pauli_rotations_walk(generators, deepcopy(o), ket, bias, scales)
+  
+        #
+        # initialize data for new walk down tree
+        scale = 1.0
+        nt = length(generators)
+        oi = o
+
+        # 
+        # Loop through the generators in reverse, i.e., from the operator to the state
+        for t in reverse(1:nt)
+            g = generators[t]
+            
+            #
+            # First check to see if the current generator commutes with our current operator
+            commute(oi, g) == false || continue
+
+            #
+            # Our bias goes from 0 -> 1 depending on if we should branch toward cos or sin respectively
+            branch = rand() < bias[t]
+
+            # if branch is true, we consider sin branch, else consider cos
+            if branch
+                # sin branch
+                oi = multiply(g, oi)    # multiply the pauli's
+                oi = oi + 1             # multiply the sin branch pauli by 1im
+            end
+            scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
+        end
+    
+        expval[s] = scale * expectation_value_sign(oi, ket)
     end
     
     return expval
@@ -30,78 +66,11 @@ end
 
 
 
-"""
-    stochastic_pauli_rotations_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
 
-TBW
-"""
-function stochastic_pauli_rotations_walk(generators::Vector{P}, o::P, ket, bias, scales) where P<:Pauli 
-
-    scale = 1.0
-    nt = length(generators)
-    oi = o
-    for t in reverse(1:nt)
-        g = generators[t]
-        commute(oi,g) == false || continue
-
-      
-        branch = rand() < bias[t]
-
-        # if branch is true, we consider sin branch, else consider cos
-
-        if branch 
-            # sin branch
-            oi = multiply(g, oi)
-            oi = oi + 1
-        end
-        scale *= scales[t]
-    end
-
-    # display(oi)
-    return scale * expectation_value_sign(oi, ket)
-end
-
-"""
-    stochastic_pauli_rotations_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
-
-TBW
-"""
-function stochastic_pauli_rotations_walk(generator_tuple::Tuple{Vector{Pauli128}, Vector{Int}}, o_in::Tuple{Pauli128, Int}, ket, bias, scales)
-
-    generators = generator_tuple[1]
-    phases = generator_tuple[2]
-    o = o_in[1]
-    θ = o_in[2]
-    
-    scale = 1.0
-    nt = length(generators)
-    
-    for t in reverse(1:nt)
-        g = generators[t]
-        commute(o,g) == false || continue
-       
-        branch = rand() < bias[t]
-
-        # if branch is true, we consider sin branch, else consider cos
-
-        if branch 
-            # sin branch
-            o,θi = multiply(o, θ, g, phases[t])
-            θ = (θ + θi) % 4
-            θ = (θ + 1) % 4
-        end
-        scale *= scales[t]
-    end
-   
-    val = scale * expectation_value_sign(o,ket) * (1im)^θ
-    # abs(val) < 1e-12 || println(val) 
-    return val 
-end
-
-"""
+""""
     stochastic_pauli_rotations_run(generators::Vector{PauliBoolVec{N}}, angles, o::PauliBoolVec{N}) where N
 
-TBW
+Not yet used for anything
 """
 function get_random_leaf(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket) where N
 

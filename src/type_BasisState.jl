@@ -19,7 +19,7 @@ function BasisState(vec::Vector{T}) where T<:Union{Bool, Integer}
             v |= two^(i-1)
         end
     end
-    return BasisState{N}(v)
+    return BasisState{length(vec)}(v)
 end
 
 """
