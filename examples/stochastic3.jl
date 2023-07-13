@@ -10,43 +10,39 @@ using Distributed
 end
 
 # @everywhere function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
-function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
-    generators = Vector{Pauli128}([])
+function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
+    generators = Vector{PauliBitString{N}}([])
     parameters = Vector{Float64}([])
-    phases = Vector{Int}([])
 
     # Loop over trotter steps
     for ki in 1:k
         ## ZZ layer
         # e^{i π/2 P2} e^{i π P1 /2}|ψ>
         for i in 1:N-1
-            pi, θ = Pauli128(N, Z=[i, i + 1])
+            pi = PauliBitString(N, Z=[i, i + 1])
             push!(generators, pi)
-            push!(phases, θ)
             push!(parameters, π)
         end
             
         #pbc 
-        pi, θ = Pauli128(N, Z=[N, 1])
+        pi = PauliBitString(N, Z=[N, 1])
         push!(generators, pi)
-        push!(phases, θ)
         push!(parameters, π )
 
         ## X layer
         # e^{i αn Pn / 2}
         for i in 1:N
-            pi, θ = Pauli128(N, X=[i])
+            pi = PauliBitString(N, X=[i])
             push!(generators, pi)
-            push!(phases, θ)
             push!(parameters, α)
         end
     end
 
-    return (generators, phases), parameters
+    return generators, parameters
 end
 
 # @everywhere function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
-function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
+function get_unitary_sequence_1D(o::PauliBoolVec{N}; α=.01, k=10) where N
    
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
@@ -84,7 +80,7 @@ function generate_samples(generators, parameters, o, ket, nsamples; seed=1)
     Random.seed!(seed)
     rolling_avg = zeros(nsamples)
     
-    samples = UnitaryPruning.randomized_pauli_dynamics(generators, parameters, o, ket, nsamples=nsamples)
+    samples = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, nsamples=nsamples)
     samples .= real.(samples)
 
     rolling_avg[1] = samples[1]
@@ -109,7 +105,7 @@ function run(o, ket; nruns=100, nsamples=1000, N=6)
         std_traj = zeros(nsamples)
 
         # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5, N=$N)
-        generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=5, N=N)
+        generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=5)
 
         # avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
         #     generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
@@ -157,7 +153,7 @@ end
 
 
 function run2()
-    N = 6
+    N = 20 
 
     # Operator
     # o = PauliBoolVec(N, X=[13,29,31], Y=[9,30], Z=[8,12,17,28,32])
@@ -172,18 +168,18 @@ function run2()
     # State
     ket = zeros(Bool, N)
 
-    run(o, ket, nruns=100, nsamples=10000, N=N)
+    @time run(o, ket, nruns=100, nsamples=1000, N=N)
 
     println()
 
 
     # State
-    ket = Int128(0) 
+    ket = BasisState(N, 0) 
 
-    o = Pauli128(N, Z=[1, 2, 3, 4, 5, 6])
-    o = Pauli128(N, X=[1,2], Y=[3], Z=[5,6])
-    o = Pauli128(N, Z=[1])
+    # o = Pauli128(N, Z=[1, 2, 3, 4, 5, 6])
+    # o = Pauli128(N, X=[1,2], Y=[3], Z=[5,6])
+    o = PauliBitString(N, Z=[1, 2])
     
-    # run(o, ket, nruns=100, nsamples=1000, N=N)
+    @time run(o, ket, nruns=100, nsamples=1000, N=N)
 end
 run2()

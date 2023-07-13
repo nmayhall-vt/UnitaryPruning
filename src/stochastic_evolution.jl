@@ -2,11 +2,11 @@ using Random
 
 
 """
-    randomized_pauli_dynamics(generators, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where {N}
+    stochastic_pauli_rotations(generators, angles, o_in::PauliBoolVec{N}, ket; nsamples=1000) where {N}
 
 TBW
 """
-function randomized_pauli_dynamics(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
+function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
 
     #
     # for a single pauli Unitary, Un = exp(-i θn Pn/2)
@@ -17,11 +17,11 @@ function randomized_pauli_dynamics(generators::Vector{P}, angles, o::P, ket; nsa
     scales = sin.(angles) .+ cos.(angles) 
     bias = sin.(angles) ./ scales
        
-    # @btime stochastic_pauli_dynamics_walk($generators, $o, $ket, $bias, $scales)
+    # @btime stochastic_pauli_rotations_walk($generators, $o, $ket, $bias, $scales)
 
     expval = zeros(ComplexF64, nsamples)
     for s in 1:nsamples
-        expval[s] = randomized_pauli_dynamics_walk(generators, deepcopy(o), ket, bias, scales)
+        expval[s] = stochastic_pauli_rotations_walk(generators, deepcopy(o), ket, bias, scales)
     end
     
     return expval
@@ -31,11 +31,11 @@ end
 
 
 """
-    randomized_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
+    stochastic_pauli_rotations_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
 
 TBW
 """
-function randomized_pauli_dynamics_walk(generators::Vector{P}, o::P, ket, bias, scales) where P<:Pauli 
+function stochastic_pauli_rotations_walk(generators::Vector{P}, o::P, ket, bias, scales) where P<:Pauli 
 
     scale = 1.0
     nt = length(generators)
@@ -62,11 +62,11 @@ function randomized_pauli_dynamics_walk(generators::Vector{P}, o::P, ket, bias, 
 end
 
 """
-    randomized_pauli_dynamics_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
+    stochastic_pauli_rotations_walk(generators::Vector{PauliBoolVec{N}}, o::PauliBoolVec{N}, ket, bias, scales) where N
 
 TBW
 """
-function randomized_pauli_dynamics_walk(generator_tuple::Tuple{Vector{Pauli128}, Vector{Int}}, o_in::Tuple{Pauli128, Int}, ket, bias, scales)
+function stochastic_pauli_rotations_walk(generator_tuple::Tuple{Vector{Pauli128}, Vector{Int}}, o_in::Tuple{Pauli128, Int}, ket, bias, scales)
 
     generators = generator_tuple[1]
     phases = generator_tuple[2]
@@ -99,7 +99,7 @@ function randomized_pauli_dynamics_walk(generator_tuple::Tuple{Vector{Pauli128},
 end
 
 """
-    stochastic_pauli_dynamics_run(generators::Vector{PauliBoolVec{N}}, angles, o::PauliBoolVec{N}) where N
+    stochastic_pauli_rotations_run(generators::Vector{PauliBoolVec{N}}, angles, o::PauliBoolVec{N}) where N
 
 TBW
 """
