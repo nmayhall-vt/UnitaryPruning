@@ -9,24 +9,38 @@ using Random
     a = PauliBoolVec("XYZIXY")
     b = PauliBoolVec("YXXYZZ")
     c = PauliBoolVec("ZZYYYX")
-    c.θ = 2
-    display(c)
+    c += 3
+    display(a)
+    display(b)
     display(a*b)
+    display(c)
     @test c == a*b 
 
     @test commute(a,b) == false
     
-    c.θ = 0
-    @test c == b*a 
+    # c.θ = 0
+    # @test c == b*a 
+    
+    println() 
+    a = PauliBitString("XYZIXY")
+    b = PauliBitString("YXXYZZ")
+    c = PauliBitString("ZZYYYX")
+    c += 1
+    display(a)
+    display(b)
+    display(a*b)
+    display(c)
+    @test c == a*b 
+
 
     a = PauliBoolVec("XYYZIZYZIIXYIIYZI")
     b = PauliBoolVec("YYYIIZIIZIZYXIXYZ")
     c = PauliBoolVec("ZIIZIIYZZIYIXIZXZ")
-    c.θ = 0
+    c += 2 
     display(a)
     display(b)
-    display(c)
     display(a*b)
+    display(c)
     @test c == a*b 
     @test c == b*a
     
@@ -36,7 +50,7 @@ using Random
 
     
     a = PauliBoolVec("IIZIZIIII")
-    b = Pauli128("IIZIZIIII")
+    b = PauliBitString("IIZIZIIII")
     v = Vector{Bool}([1,1,1,0,0,0,0,0,0])
     @test expectation_value_sign(a,v) == -1
     @test expectation_value_sign(b,Ket128(v).v) == -1
@@ -71,7 +85,7 @@ using Random
     
     
     #############################################################
-    for i in 1:10
+    for i in 1:100
         o = UnitaryPruning.random_PauliBoolVec(20)
         g = UnitaryPruning.random_PauliBoolVec(20)
         o2 = PauliBitString(o)

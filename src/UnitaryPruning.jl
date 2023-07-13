@@ -15,7 +15,6 @@ include("type_BasisState.jl")
 include("type_PauliBoolVec.jl")
 include("type_PauliBitString.jl")
 include("type_PauliMask.jl")
-include("type_Pauli128.jl")
 include("conversions.jl")
 include("dfs.jl")
 include("energy_dfs_iter.jl")
@@ -24,8 +23,6 @@ include("sparse_pauli_dynamics.jl")
 
 export Pauli
 export BasisState 
-export Ket128 
-export Pauli128
 export PauliString
 export PauliBoolVec
 export PauliBitString

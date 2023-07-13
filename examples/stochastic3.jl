@@ -9,8 +9,7 @@ using Distributed
     using SharedArrays
 end
 
-# @everywhere function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
-function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
+@everywhere function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
     generators = Vector{PauliBitString{N}}([])
     parameters = Vector{Float64}([])
 
@@ -176,8 +175,6 @@ function run2()
     # State
     ket = BasisState(N, 0) 
 
-    # o = Pauli128(N, Z=[1, 2, 3, 4, 5, 6])
-    # o = Pauli128(N, X=[1,2], Y=[3], Z=[5,6])
     o = PauliBitString(N, Z=[1, 2])
     
     @time run(o, ket, nruns=100, nsamples=1000, N=N)

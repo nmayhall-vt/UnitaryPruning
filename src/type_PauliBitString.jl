@@ -107,6 +107,16 @@ function multiply(p1::PauliBitString{N},  p2::PauliBitString{N}) where N
 end
 
 """
+    Base.:*(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+
+TBW
+"""
+function Base.:*(p1::PauliBitString{N}, p2::PauliBitString{N}) where {N}
+    return multiply(p1,p2)
+end
+
+
+"""
     is_diagonal(p::PauliBitString)
 
 Does this operator consist of only I and/or Z?

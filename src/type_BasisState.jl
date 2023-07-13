@@ -45,7 +45,7 @@ function Base.show(io::IO, P::BasisState{N}) where N
 end
 
 """
-    Base.display(p::Pauli128)
+    Base.string(p::BasisState{N}) where N
 
 Display, y = iY
 """
