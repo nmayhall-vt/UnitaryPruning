@@ -12,7 +12,7 @@ function eagle_processor(N=127, k=10, α=.01, sequences=[[1,13], [19,32],[38,51]
                                 [76,91,95],[80,92,99],[84,93,103],[88,94,107],[97,110,115],[101,111,119],[105,112,123],
                                 [109,113,127]])
 
-    need_bridges=false
+    need_bridges=true
 
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
