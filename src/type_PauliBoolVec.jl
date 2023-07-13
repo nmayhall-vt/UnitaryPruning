@@ -5,8 +5,8 @@ using Parameters
 #   (i)^θ ⋅ Z^z1 X^x1 ⊗ Z^z2 X^x2 ⊗ ⋯ ⊗ Z^zN X^xN  
 struct PauliBoolVec{N} <: Pauli
     θ::UInt8
-    x::MVector{N, Bool}
     z::MVector{N, Bool}
+    x::MVector{N, Bool}
 end
 
 function PauliBoolVec(str::String)

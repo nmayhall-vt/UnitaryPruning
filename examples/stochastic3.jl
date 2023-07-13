@@ -101,8 +101,8 @@ function run(o, ket; nruns=100, nsamples=1000, N=6)
     final_vals_stoc = []
     final_vals_errs = []
 
-    # for i in 0:16
-    for i in 8:8
+    for i in 0:16
+    # for i in 8:8
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
@@ -115,7 +115,7 @@ function run(o, ket; nruns=100, nsamples=1000, N=6)
         #     generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
         # end
          for runi in 1:nruns
-             a,b = generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
+            a,b = generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
             avg_traj .+= a
             var_traj .+= b
          end
@@ -164,14 +164,15 @@ function run2()
     # o = PauliBoolVec(N, Z=[1,2,3,4])
     o = PauliBoolVec(N, Y=[1], Z=[2, 3, 4])
     # o = PauliBoolVec(N, Z=[1,30])
-    o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
     o = PauliBoolVec(N, X=[1,2], Y=[3], Z=[5,6])
     o = PauliBoolVec(N, Z=[1])
+    o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
+    o = PauliBoolVec(N, Z=[1, 2])
         
     # State
     ket = zeros(Bool, N)
 
-    run(o, ket, nruns=100, nsamples=1000, N=N)
+    run(o, ket, nruns=100, nsamples=10000, N=N)
 
     println()
 

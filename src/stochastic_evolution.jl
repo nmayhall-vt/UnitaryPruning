@@ -39,7 +39,7 @@ function randomized_pauli_dynamics_walk(generators::Vector{P}, o::P, ket, bias, 
 
     scale = 1.0
     nt = length(generators)
-    oi = deepcopy(o)
+    oi = o
     for t in reverse(1:nt)
         g = generators[t]
         commute(oi,g) == false || continue
@@ -51,13 +51,13 @@ function randomized_pauli_dynamics_walk(generators::Vector{P}, o::P, ket, bias, 
 
         if branch 
             # sin branch
-            # oi = multiply(g, oi)
-            oi = oi + 3
+            oi = multiply(g, oi)
+            oi = oi + 1
         end
         scale *= scales[t]
     end
 
-    display(oi)
+    # display(oi)
     return scale * expectation_value_sign(oi, ket)
 end
 
