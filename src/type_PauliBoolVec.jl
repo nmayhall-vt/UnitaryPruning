@@ -83,7 +83,7 @@ function multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     # println(p1.θ, " ", p2.θ)
     θ = (θ + 2*count(p1.x .& p2.z)) % 4
     # println(θ)
-    return PauliBoolVec{N}(θ,x,z)
+    return PauliBoolVec{N}(θ,z,x)
 end
 
 
