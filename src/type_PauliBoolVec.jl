@@ -274,7 +274,7 @@ function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles
     length(angles) == Nt || throw(DimensionMismatch)
     for t in 1:Nt
         α = angles[t]
-        # Ut = e(i α Pn) = cos(α) I + i sin(α) Pn
+        # Ut = e(i α/2 Pn) = cos(α/2) I + i sin(α/2) Pn
         # U = cos(α/2) .* U   .+   1im * sin(α/2) .* U * to_matrix(generators[t]) 
         U = cos(α/2) .* U   .+   1im * sin(α/2) .* to_matrix(generators[t]) * U 
     end

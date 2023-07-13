@@ -20,18 +20,19 @@ end
         for i in 1:N-1
             pi = PauliBitString(N, Z=[i, i + 1])
             push!(generators, pi)
-            push!(parameters, π)
+            push!(parameters, π/2)
         end
             
         #pbc 
         pi = PauliBitString(N, Z=[N, 1])
         push!(generators, pi)
-        push!(parameters, π )
+        push!(parameters, π/2)
 
         ## X layer
-        # e^{i αn Pn / 2}
+        # e^{i αn (-X) / 2}
         for i in 1:N
             pi = PauliBitString(N, X=[i])
+            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
             push!(generators, pi)
             push!(parameters, α)
         end
@@ -49,22 +50,23 @@ end
     for ki in 1:k
         
         ## ZZ layer
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
+        # e^{i π/4 P2} e^{i π P1 /4}|ψ>
         for i in 1:N-1
             pi = PauliBoolVec(N, Z=[i, i + 1])
             push!(generators, pi)
-            push!(parameters, π)
+            push!(parameters, π/2)
         end
             
         #pbc 
         pi = PauliBoolVec(N, Z=[N, 1])
         push!(generators, pi)
-        push!(parameters, π )
+        push!(parameters, π/2 )
 
         ## X layer
         # e^{i αn Pn / 2}
         for i in 1:N
             pi = PauliBoolVec(N, X=[i])
+            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
             push!(generators, pi)
             push!(parameters, α)
         end
@@ -95,7 +97,10 @@ function run(; nruns=100, nsamples=1000, N=6)
     # Uncomment to use bitstrings
     #
     ket = BasisState(N, 0) 
-    o = PauliBitString(N, Z=[1, 2])
+    o = PauliBitString(N, Z=[5])
+    o = PauliBitString(N, Y=[1])
+    # o = PauliBitString(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
+    o = PauliBitString(N, Z=[1])
 
     #
     # Uncomment to use boolvecs
@@ -103,12 +108,15 @@ function run(; nruns=100, nsamples=1000, N=6)
     # ket = zeros(Bool,N)
     # o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
     # o = PauliBoolVec(N, Z=[1, 2])
+    # o = PauliBoolVec(N, Y=[1])
+    # o = PauliBoolVec(N, Z=[1])
 
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in 0:16
+    for i in [(i-1)*2 for i in 1:9]
     # for i in 8:8
+    # for i in 2:2 
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
@@ -117,7 +125,8 @@ function run(; nruns=100, nsamples=1000, N=6)
         #
         # Uncomment the following to do a parallel run "addprocs(3; exeflags="--project")"
         #
-        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
+        # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
+        @everywhere generators, parameters = UnitaryPruning.eagle_processor($o, α=$i * π / 32, k=20)
         avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
             compute_run(generators, parameters, o, ket, nsamples, seed=runi)
         end
@@ -127,10 +136,10 @@ function run(; nruns=100, nsamples=1000, N=6)
         #
         # generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=5)
         # for runi in 1:nruns
-        #     a,b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
+        #     a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
         #     avg_traj .+= a
         #     var_traj .+= b
-        #  end
+        # end
 
 
         var_traj .= var_traj .- (avg_traj .* avg_traj) ./ nruns
@@ -155,9 +164,10 @@ function run(; nruns=100, nsamples=1000, N=6)
     end
 
     plot(final_vals_stoc, ribbon=final_vals_errs, marker=:circle)
-    plot!(final_vals)
+    # plot!(final_vals)
     savefig("plot.pdf")
+    return final_vals_stoc, final_vals_errs
 end
 
 
-@time run(nruns=1000, nsamples=10000, N=6)
+@time v,e = run(nruns=1000, nsamples=100000, N=127)

@@ -39,7 +39,8 @@ function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; ns
         # Loop through the generators in reverse, i.e., from the operator to the state
         for t in reverse(1:nt)
             g = generators[t]
-            
+           
+            # @printf(" %12.8f %s\n", bias[t], string(g))
             #
             # First check to see if the current generator commutes with our current operator
             commute(oi, g) == false || continue

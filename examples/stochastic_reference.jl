@@ -5,6 +5,11 @@ using Printf
 using Random
 using LinearAlgebra
 
+#
+#   in the experiment, the circuit is 
+#
+#   exp(i θ/2 (-X)) exp(i π/4 ZZ)
+#
 function run(;α=.01, k=10)
     N = 6 
     generators = Vector{PauliBoolVec{N}}([])
@@ -14,22 +19,23 @@ function run(;α=.01, k=10)
     for ki in 1:k
         
         ## ZZ layer
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
+        # e^{i θ/2 P2} e^{i θ/2 P1}|ψ>
         for i in 1:N-1
             pi = PauliBoolVec(N, Z=[i, i + 1])
             push!(generators, pi)
-            push!(parameters, π)
+            push!(parameters, π/2)
         end
             
         #pbc 
         pi = PauliBoolVec(N, Z=[N, 1])
         push!(generators, pi)
-        push!(parameters, π )
+        push!(parameters, π/2 )
 
         ## X layer
-        # e^{i αn Pn / 2}
+        # e^{i θ/2 (-P2)}
         for i in 1:N
             pi = PauliBoolVec(N, X=[i])
+            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
             push!(generators, pi)
             push!(parameters, α)
         end
@@ -41,9 +47,10 @@ function run(;α=.01, k=10)
     o = PauliBoolVec(N, Y=[1], Z=[2,3,4])
     o = PauliBoolVec(N, Z=[1,2])
     o = PauliBoolVec(N, X=[1,2], Y=[3], Z=[5,6])
-    o = PauliBoolVec(N, Z=[1])
     o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
     o = PauliBoolVec(N, Z=[1,2])
+    o = PauliBoolVec(N, Y=[1])
+    o = PauliBoolVec(N, X=[1], Y=[2,3])
     
     o_mat = to_matrix(o)
 
