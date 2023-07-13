@@ -12,8 +12,9 @@ function run(;α=.01, k=10)
 
     # Loop over trotter steps
     for ki in 1:k
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
+        
         ## ZZ layer
+        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
         for i in 1:N-1
             pi = PauliBoolVec(N, Z=[i, i + 1])
             push!(generators, pi)

@@ -3,7 +3,7 @@ using Parameters
 
 #
 #   (i)^θ ⋅ Z^z1 X^x1 ⊗ Z^z2 X^x2 ⊗ ⋯ ⊗ Z^zN X^xN  
-mutable struct PauliBoolVec{N} <: Pauli
+struct PauliBoolVec{N} <: Pauli
     θ::UInt8
     x::MVector{N, Bool}
     z::MVector{N, Bool}
@@ -86,24 +86,6 @@ function multiply(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
     return PauliBoolVec{N}(θ,x,z)
 end
 
-"""
-    multiply!(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
-
-TBW
-"""
-function multiply!(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
-
-    # x = x1 + x2 % 2
-    # z = z1 + z2 % 2
-    # sign = x2 + z2
-
-    p1.x .= p1.x .⊻ p2.x
-    p1.z .= p1.z .⊻ p2.z
-    θ = (p1.θ + p2.θ ) % 4
-    # println(p1.θ, " ", p2.θ)
-    θ = (θ + 2*count(p1.x .& p2.z)) % 4
-    p1.θ = θ
-end
 
 """
     Base.:*(p1::PauliBoolVec{N}, p2::PauliBoolVec{N}) where {N}
@@ -183,7 +165,7 @@ end
 Display, y = iY
 """
 function Base.display(p::PauliBoolVec{N}) where {N}
-    println(1im^p.θ,"|", string(p)) 
+    println(@sprintf "%2i %2iim | %s" real(1im^p.θ) imag(1im^p.θ) string(p)) 
 end
 
 """
@@ -296,13 +278,6 @@ function build_time_evolution_matrix(generators::Vector{PauliBoolVec{N}}, angles
 end
 
 
-"""
-    set!(o1::PauliBoolVec, o2::PauliBoolVec)
-
-TBW
-"""
-function set!(o1::PauliBoolVec{N}, o2::PauliBoolVec{N}) where N
-   o1.θ =  o2.θ
-   o1.x .=  o2.x
-   o1.z .=  o2.z
+function Base.:+(p::PauliBoolVec{N}, θ::Integer) where N
+    return PauliBoolVec{N}((p.θ + θ)%4, p.z, p.x)
 end

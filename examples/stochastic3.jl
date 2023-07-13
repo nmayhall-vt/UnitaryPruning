@@ -9,14 +9,14 @@ using Distributed
     using SharedArrays
 end
 
-@everywhere function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
+# @everywhere function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
+function get_unitary_sequence_1D(o::Tuple{Pauli128, Int}; α=.01, k=10, N=6)
     generators = Vector{Pauli128}([])
     parameters = Vector{Float64}([])
     phases = Vector{Int}([])
 
     # Loop over trotter steps
     for ki in 1:k
-        
         ## ZZ layer
         # e^{i π/2 P2} e^{i π P1 /2}|ψ>
         for i in 1:N-1
@@ -45,7 +45,8 @@ end
     return (generators, phases), parameters
 end
 
-@everywhere function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
+# @everywhere function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
+function get_unitary_sequence_1D(o::PauliBoolVec; α=.01, k=10, N=6)
    
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
@@ -78,7 +79,8 @@ end
     return generators, parameters
 end
 
-@everywhere function generate_samples(generators, parameters, o, ket, nsamples; seed=1)
+# @everywhere function generate_samples(generators, parameters, o, ket, nsamples; seed=1)
+function generate_samples(generators, parameters, o, ket, nsamples; seed=1)
     Random.seed!(seed)
     rolling_avg = zeros(nsamples)
     
@@ -99,20 +101,24 @@ function run(o, ket; nruns=100, nsamples=1000, N=6)
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in 0:16
-    # for i in 8:8
-
-
+    # for i in 0:16
+    for i in 8:8
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
         std_traj = zeros(nsamples)
 
-        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5, N=$N)
+        # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5, N=$N)
+        generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=5, N=N)
 
-        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
-            generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
-        end
+        # avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
+        #     generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
+        # end
+         for runi in 1:nruns
+             a,b = generate_samples(generators, parameters, o, ket, nsamples, seed=runi)
+            avg_traj .+= a
+            var_traj .+= b
+         end
 
         # a = pmap(runi -> generate_samples(generators, parameters, o, ket, nsamples, seed=runi), 1:nruns)
 
@@ -177,6 +183,6 @@ function run2()
     o = Pauli128(N, X=[1,2], Y=[3], Z=[5,6])
     o = Pauli128(N, Z=[1])
     
-    run(o, ket, nruns=100, nsamples=1000, N=N)
+    # run(o, ket, nruns=100, nsamples=1000, N=N)
 end
 run2()

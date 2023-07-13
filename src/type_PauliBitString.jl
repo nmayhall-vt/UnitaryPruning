@@ -122,7 +122,8 @@ TBW
 """
 function Base.show(io::IO, p::PauliBitString{N}) where N
     # print(io, @sprintf "Pstring(P))
-    println(io, 1im^p.θ,"|", string(p)) 
+    # println(io, 1im^p.θ,"|", string(p)) 
+    println(@sprintf "%2i %2iim | %s" real(1im^p.θ) imag(1im^p.θ) string(p)) 
 end
 
 
