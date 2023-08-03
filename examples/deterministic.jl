@@ -40,45 +40,47 @@ end
     return generators, parameters
 end
 
-@everywhere function get_unitary_sequence_1D(o::PauliBoolVec{N}; α=.01, k=10) where N
+# @everywhere function get_unitary_sequence_1D(o::PauliBoolVec{N}; α=.01, k=10) where N
    
-    generators = Vector{PauliBoolVec{N}}([])
-    parameters = Vector{Float64}([])
+#     generators = Vector{PauliBoolVec{N}}([])
+#     parameters = Vector{Float64}([])
 
-    # Loop over trotter steps
-    for ki in 1:k
+#     # Loop over trotter steps
+#     for ki in 1:k
         
-        ## ZZ layer
-        # e^{i π/4 P2} e^{i π P1 /4}|ψ>
-        for i in 1:N-1
-            pi = PauliBoolVec(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π/2)
-        end
+#         ## ZZ layer
+#         # e^{i π/4 P2} e^{i π P1 /4}|ψ>
+#         for i in 1:N-1
+#             pi = PauliBoolVec(N, Z=[i, i + 1])
+#             push!(generators, pi)
+#             push!(parameters, π/2)
+#         end
             
-        #pbc 
-        pi = PauliBoolVec(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π/2 )
+#         #pbc 
+#         pi = PauliBoolVec(N, Z=[N, 1])
+#         push!(generators, pi)
+#         push!(parameters, π/2 )
 
-        ## X layer
-        # e^{i αn Pn / 2}
-        for i in 1:N
-            pi = PauliBoolVec(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
-            push!(generators, pi)
-            push!(parameters, α)
-        end
-    end
+#         ## X layer
+#         # e^{i αn Pn / 2}
+#         for i in 1:N
+#             pi = PauliBoolVec(N, X=[i])
+#             pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
+#             push!(generators, pi)
+#             push!(parameters, α)
+#         end
+#     end
 
-    return generators, parameters
-end
+#     return generators, parameters
+# end
 
 @everywhere function compute_run(generators, parameters, o, ket, nsamples; seed=1)
     Random.seed!(seed)
     rolling_avg = zeros(nsamples)
 
-    samples = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, nsamples=nsamples)
+    samples = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket)
+
+    exit()
     samples .= real.(samples)
 
     rolling_avg[1] = samples[1]

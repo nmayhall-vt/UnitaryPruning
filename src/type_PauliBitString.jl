@@ -99,8 +99,13 @@ end
 TBW
 """
 function multiply(p1::PauliBitString{N},  p2::PauliBitString{N}) where N
+#    print("p1 ", p1, " p2 ", p2)
+#    print("p1.x ", p1.x, "\n", "p2.x ", p2.x, "\n")
+#    print("p1.z ", p1.z, "\n", "p2.z ", p2.z, "\n")
     x = p1.x ⊻ p2.x
     z = p1.z ⊻ p2.z
+#    print("p1.θ ", p1.θ, "\n", "p2.θ ", p2.θ, "\n")
+#    exit()
     θ = (p1.θ + p2.θ ) % 4
     θ = (θ + 2*count_ones(p1.x & p2.z)) % 4
     return PauliBitString{N}(θ,z,x)

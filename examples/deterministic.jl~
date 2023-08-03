@@ -78,7 +78,9 @@ end
     Random.seed!(seed)
     rolling_avg = zeros(nsamples)
 
-    samples = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, nsamples=nsamples)
+    samples = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket)
+
+    exit()
     samples .= real.(samples)
 
     rolling_avg[1] = samples[1]
