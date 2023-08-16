@@ -74,11 +74,11 @@ end
 #     return generators, parameters
 # end
 
-@everywhere function compute_run(generators, parameters, o, ket, nsamples; seed=1)
-    Random.seed!(seed)
-    rolling_avg = zeros(nsamples)
+@everywhere function compute_run(generators, parameters, o, ket, N)
+#    Random.seed!(seed)
+#    rolling_avg = zeros(nsamples)
 
-    samples = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket)
+    samples = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, N)
 
     exit()
     samples .= real.(samples)
@@ -136,11 +136,11 @@ function run(; nruns=100, nsamples=1000, N=6)
         # Uncomment the following to do a serial run
         #
         generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=2)
-        for runi in 1:nruns
-            a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-            avg_traj .+= a
-            var_traj .+= b
-        end
+#        for runi in 1:nruns
+        a, b = compute_run(generators, parameters, o, ket, N)#runi)
+#            avg_traj .+= a
+#            var_traj .+= b
+#        end
 
 
         var_traj .= var_traj .- (avg_traj .* avg_traj) ./ nruns

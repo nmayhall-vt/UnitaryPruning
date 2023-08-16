@@ -51,6 +51,7 @@ function run(;α=.01, k=10)
     o = PauliBoolVec(N, Z=[1,2])
     o = PauliBoolVec(N, Y=[1])
     o = PauliBoolVec(N, X=[1], Y=[2,3])
+    o = PauliBitString(N, Z=[1])
     
     o_mat = to_matrix(o)
 
