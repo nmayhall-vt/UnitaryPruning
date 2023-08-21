@@ -25,6 +25,11 @@ function PauliBitString(z::I, x::I) where I<:Integer
     return PauliBitString{N}(θ, z, x)
 end
 
+function PauliBitString(z::I, x::I, N) where I<:Integer
+    θ = count_ones(z & x)*3 % 4
+    return PauliBitString{N}(θ, z, x)
+end
+
 """
     PauliBitString(str::String)
 

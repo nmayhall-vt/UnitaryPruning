@@ -75,12 +75,12 @@ function deterministic_pauli_rotations(generators::Vector{P}, angles, o::P, ket,
         println("opers", opers)
 
     end
-    println("Final", opers)
+#    println("Final", opers)
     for (key,value) in opers
         oper = PauliBitString(key[1],key[2],N)
 #        println("oper  ", oper, is_diagonal(oper))
 #        println("expval  ", expectation_value_sign(oper, ket))
-        expval[1] += expectation_value_sign(oper, ket)
+        expval[1] += value*expectation_value_sign(oper, ket)
     end
     print(expval)
     return expval
