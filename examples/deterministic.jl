@@ -12,7 +12,7 @@ end
 @everywhere function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
     generators = Vector{PauliBitString{N}}([])
     parameters = Vector{Float64}([])
-    print("alpha", α, "\n")
+    # print("alpha", α, "\n")
     # Loop over trotter steps
     for ki in 1:k
         ## ZZ layer
@@ -80,7 +80,6 @@ end
 
     samples = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, N)
 
-    exit()
     samples .= real.(samples)
 
     rolling_avg[1] = samples[1]
@@ -92,7 +91,7 @@ end
 end
 
 
-function run(; nruns=100, nsamples=1000, N=6)
+function run(; N=6)
    
     #
     # Uncomment to use bitstrings
@@ -115,59 +114,29 @@ function run(; nruns=100, nsamples=1000, N=6)
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in [(i-1)*2 for i in 5:5]
-    # for i in 8:8
-    # for i in 2:2 
-        avg_traj = zeros(nsamples)
-        var_traj = zeros(nsamples)
-        std_traj = zeros(nsamples)
+    for i in [(i-1)*2 for i in 1:16]
 
-        #
-        # Uncomment the following to do a parallel run "addprocs(3; exeflags="--project")"
-        #
-        # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
-#        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=10)
-        
-#        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
-#            compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-#        end
         
         #
         # Uncomment the following to do a serial run
         #
         generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=2)
-#        for runi in 1:nruns
-        a, b = compute_run(generators, parameters, o, ket, N)#runi)
-#            avg_traj .+= a
-#            var_traj .+= b
-#        end
+        # for g in generators
+        #     print(g)
+        # end
+        # a, b = compute_run(generators, parameters, o, ket, N)
+    
+        e = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, N)
 
 
-        var_traj .= var_traj .- (avg_traj .* avg_traj) ./ nruns
-        avg_traj ./= nruns
-        var_traj ./= nruns
+        @printf(" α: %4i e: %12.8f+%12.8fi\n", i, real(e), imag(e))
 
-        std_traj = sqrt.(var_traj)
-        z = 1.96 # 95% confidence
-        std_traj = z .* std_traj ./ sqrt(nruns)
-
-        @printf(" α: %4i avg: %12.8f ± %-12.6f var: %12.8f\n", i, avg_traj[end], std_traj[end], var_traj[end])
-
-        #
-        # Plot stuff
-        #
-        # plot(trajectories, ylim=[-1,1], legend=false, color=:grey, alpha=.1)
-        plot(avg_traj, color=:black, ribbon=std_traj, ylim=[-1, 1], legend=false, dpi=300)
-        filename = @sprintf "%05i.png" i
-        savefig(filename)
-        push!(final_vals_stoc, avg_traj[end])
-        push!(final_vals_errs, std_traj[end])
     end
 
-    plot(final_vals_stoc, ribbon=final_vals_errs, marker=:circle)
+    # plot(final_vals_stoc, ribbon=final_vals_errs, marker=:circle)
     # plot!(final_vals)
-    savefig("plot.pdf")
+    # savefig("plot.pdf")
     return final_vals_stoc, final_vals_errs
 end
 
-@time v,e = run(nruns=1, nsamples=1, N=6)
+@time v,e = run(N=6)
