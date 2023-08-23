@@ -11,7 +11,7 @@ using LinearAlgebra
 #   exp(i θ/2 (-X)) exp(i π/4 ZZ)
 #
 function run(;α=.01, k=10)
-    N = 6 
+    N = 10
     generators = Vector{PauliBoolVec{N}}([])
     parameters = Vector{Float64}([])
 
@@ -48,10 +48,10 @@ function run(;α=.01, k=10)
     o = PauliBoolVec(N, Z=[1,2])
     o = PauliBoolVec(N, X=[1,2], Y=[3], Z=[5,6])
     o = PauliBoolVec(N, Z=[1,2,3,4,5,6])
-    o = PauliBoolVec(N, Y=[1])
-    o = PauliBoolVec(N, X=[1], Y=[2,3])
-    o = PauliBoolVec(N, Z=[1,2])
-    o = PauliBoolVec(N, Z=[1])
+    o = PauliBoolVec(N, Z=[2,5,7,8], Y=[1,3,4])
+#    o = PauliBoolVec(N, X=[1], Y=[2,3])
+#    o = PauliBoolVec(N, Z=[1,2])
+#    o = PauliBoolVec(N, Z=[1])
     
     o_mat = to_matrix(o)
 
@@ -68,8 +68,8 @@ end
 # run(;α=.01, k=30)
 
 final_vals = []
-for i in 0:16
-    ei = run(α=i*π/32, k=5)
+for i in [(i-1)*2 for i in 1:16]
+    ei = run(α=i*π/32, k=2)
     push!(final_vals, real(ei))
     @printf(" α: %4i val: %12.8f\n", i, ei)
 end

@@ -100,7 +100,7 @@ function run(; N=6)
     o = PauliBitString(N, Z=[5])
     o = PauliBitString(N, Y=[1])
     # o = PauliBitString(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
-    o = PauliBitString(N, Z=[1])
+    o = PauliBitString(N, Z=[2,5,7,8], Y=[1,3,4])
 
     #
     # Uncomment to use boolvecs
@@ -139,4 +139,4 @@ function run(; N=6)
     return final_vals_stoc, final_vals_errs
 end
 
-@time v,e = run(N=6)
+@time v,e = run(N=10)

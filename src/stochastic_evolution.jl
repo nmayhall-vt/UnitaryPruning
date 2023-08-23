@@ -13,21 +13,22 @@ function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; ns
     
     nt = length(angles)
     length(angles) == nt || throw(DimensionMismatch)
-    print("nt", nt)
+
     # 
     # Precompute the trig values to avoid doing so within the loop over samples
     scales = sin.(angles) .+ cos.(angles) 
     bias = sin.(angles) ./ scales
-
+       
     # @btime stochastic_pauli_rotations_walk($generators, $o, $ket, $bias, $scales)
-   
+
     #
     # collect our results here...
     expval = zeros(ComplexF64, nsamples)
-
+   
     # 
     # loop over number of samples for this run 
-    for s in 1:nsamples  
+    for s in 1:nsamples
+  
         #
         # initialize data for new walk down tree
         scale = 1.0
@@ -37,36 +38,28 @@ function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; ns
         # 
         # Loop through the generators in reverse, i.e., from the operator to the state
         for t in reverse(1:nt)
-
             g = generators[t]
            
             # @printf(" %12.8f %s\n", bias[t], string(g))
             #
             # First check to see if the current generator commutes with our current operator
-#            print(commute(oi, g), "\n")
-
             commute(oi, g) == false || continue
+
             #
             # Our bias goes from 0 -> 1 depending on if we should branch toward cos or sin respectively
             branch = rand() < bias[t]
-            print("branch  ", branch, "\n")
 
             # if branch is true, we consider sin branch, else consider cos
             if branch
                 # sin branch
-                print("g ", g, "\n", "oi ", oi, "\n")
                 oi = multiply(g, oi)    # multiply the pauli's
                 oi = oi + 1             # multiply the sin branch pauli by 1im
-                print("sin branch  ", oi, "\n")
             end
-#            print("before  ", scale,"\n")
             scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
-            print("after  ", scales[t], "scale  ", scale, "\n")
-            
         end
-#        print()
+    
         expval[s] = scale * expectation_value_sign(oi, ket)
-     end
+    end
     
     return expval
 end
@@ -84,7 +77,7 @@ function get_random_leaf(generators::Vector{PauliBoolVec{N}}, angles, o_in::Paul
 
     o = deepcopy(o_in)
     #
-     # for a single pauli Unitary, Un = exp(-i θn Pn/2)
+    # for a single pauli Unitary, Un = exp(-i θn Pn/2)
     # U' O U = cos(θ/2) O - i sin(θ/2) PO
     nt = length(generators)
     length(angles) == nt || throw(DimensionMismatch)
