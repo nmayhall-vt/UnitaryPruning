@@ -119,7 +119,7 @@ end
 
 function to_matrix(p::PauliBoolVec{N}, T=ComplexF64) where N
     x = [0 1; 1 0]
-    y = [0 1; -1 0]
+    y = [0 -1; 1 0]
     z = [1 0; 0 -1]
     I = [1 0; 0 1]
 
