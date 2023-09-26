@@ -5,7 +5,7 @@ using BenchmarkTools
 
 
 """
-function deterministic_pauli_rotations(generators::Vector{PauliBitString{N}}, angles, o::PauliBitString{N}, ket ; thres=1e-3) where {N}
+function deterministic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -21,10 +21,10 @@ function deterministic_pauli_rotations(generators::Vector{PauliBitString{N}}, an
 
 
     # Loop through the generators in reverse, i.e., from the operator to the state
-    opers = Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.z,o.x)=>1.0*(1im)^o.θ)
+    opers = Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.pauli.z,o.pauli.x)=>1.0*(1im)^o.θ)
         
     
-    for t in reverse(1:nt)
+    for t in 1:nt
 
         g = generators[t]
         branch_opers = Dict{Tuple{Int128, Int128}, Complex{Float64}}()
@@ -32,45 +32,44 @@ function deterministic_pauli_rotations(generators::Vector{PauliBitString{N}}, an
         sizehint!(branch_opers, 1000)
         for (key,value) in opers
             
-            oi = PauliBitString{N}(0,key[1],key[2])
-            if commute(oi, g)
+            oi = FixedPhasePauli{N}(key[1],key[2])
+            if commute(oi, g.pauli)
                 if haskey(branch_opers, (oi.z,oi.x))
-                    branch_opers[(oi.z, oi.x)] += (1im)^oi.θ * value
+                    branch_opers[(oi.z, oi.x)] += value
                 else
-                    branch_opers[(oi.z, oi.x)] = (1im)^oi.θ * value
+                    branch_opers[(oi.z, oi.x)] = value
                 end
                 continue
             end
-
             if abs(value) > thres #If greater than threshold then split the branches
-                coeff = vcos[t] * value
-            
-               
                 # cos branch
+                coeff = vcos[t] * value
+                           
                 if !haskey(branch_opers, (oi.z,oi.x)) # Add operator to dictionary if the key doesn't exist
-                    branch_opers[(oi.z, oi.x)] = coeff * (1im)^oi.θ
+                    branch_opers[(oi.z, oi.x)] = coeff
                 else
-                    branch_opers[(oi.z, oi.x)] += coeff * (1im)^oi.θ #Modify the coeff if the key exists already
+                    branch_opers[(oi.z, oi.x)] += coeff #Modify the coeff if the key exists already
                 end
 
                 # sin branch
                 coeff = vsin[t] * 1im * value
-                oi = multiply(g, oi)    # multiply the pauli's
+                oi = Pauli{N}(0, oi)
+                oi = g * oi    # multiply the pauli's
 
-                if !haskey(branch_opers, (oi.z, oi.x)) # Add operator to dictionary if the key doesn't exist
-                    branch_opers[(oi.z, oi.x)] = coeff * (1im)^oi.θ
+                if !haskey(branch_opers, (oi.pauli.z, oi.pauli.x)) # Add operator to dictionary if the key doesn't exist
+                    branch_opers[(oi.pauli.z, oi.pauli.x)] = coeff * (1im)^oi.θ
                 else
-                    branch_opers[(oi.z, oi.x)] += coeff * (1im)^oi.θ #Modify the coeff if the key exists already
+                    branch_opers[(oi.pauli.z, oi.pauli.x)] += coeff * (1im)^oi.θ #Modify the coeff if the key exists already
                 end
             end
         end
-        
         opers = deepcopy(branch_opers) # Change the list of operators to the next row
 
     end
+
     for (key,value) in opers
-        oper = PauliBitString{N}(0, key[1], key[2])
-        expval += value*expectation_value_sign(oper, ket)
+        oper = Pauli(UInt8(0), FixedPhasePauli{N}(key[1], key[2]))
+        expval += value*PauliOperators.expectation_value_sign(oper, ket)
     end
     
     return expval

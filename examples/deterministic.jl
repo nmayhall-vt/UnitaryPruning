@@ -7,88 +7,44 @@ using Distributed
     using Random
     using LinearAlgebra
     using SharedArrays
+    using PauliOperators
+
 end
-
-@everywhere function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
-    generators = Vector{PauliBitString{N}}([])
-    parameters = Vector{Float64}([])
-    # print("alpha", α, "\n")
-    # Loop over trotter steps
-    for ki in 1:k
-        ## ZZ layer
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
-        for i in 1:N-1
-            pi = PauliBitString(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π/2)
-        end
-        #pbc 
-        pi = PauliBitString(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π/2)
-
-        ## X layer
-        # e^{i αn (-X) / 2}
-        for i in 1:N
-            pi = PauliBitString(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
-            push!(generators, pi)
-            push!(parameters, α)
-        end
-    end
-
-    return generators, parameters
-end
-
 
 function run(; N=6)
    
-    #
-    # Uncomment to use bitstrings
-    #
-    ket = BasisState(N, 0) 
-    o = PauliBitString(N, Z=[5])
-    o = PauliBitString(N, Y=[1])
-    # o = PauliBitString(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
-    o = PauliBitString(N, Z=[2,5,7,8], Y=[1,3,4])
+    ket = KetBitString(N, 0) 
+#    o = Pauli(N, Z=[5])
+#    o = Pauli(N, Y=[1])
+#    o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
+#    o = Pauli(N, Z=[2,5,7,8], Y=[1,3,4])
+    o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
 
-    #
-    # Uncomment to use boolvecs
-    #
-    # ket = zeros(Bool,N)
-    # o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
-    # o = PauliBoolVec(N, Z=[1, 2])
-    # o = PauliBoolVec(N, Y=[1])
-    # o = PauliBoolVec(N, Z=[1])
-
-    final_vals_stoc = []
-    final_vals_errs = []
-
-    # for i in [(i-1)*2 for i in 1:16]
-    for i in 8:8 
-
-        
+    angles = zeros(Float64,17)
+    e = zeros(ComplexF64,17)
+    for i in [(i-1)*2 for i in 1:17]
+#    for i in 3:3        
         #
         # Uncomment the following to do a serial run
         #
-        # generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=2)
-        generators, parameters = UnitaryPruning.eagle_processor(o, α=i * π / 32, k=4)
-        # for g in generators
-        #     print(g)
-        # end
-        # a, b = compute_run(generators, parameters, o, ket, N)
-    
-        e = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-
-
-        @printf(" α: %4i e: %12.8f+%12.8fi\n", i, real(e), imag(e))
-
+        α = i * π / 32
+        generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
+        angles[Int(i/2)+1] = α
+    #    generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
+        #for j in 1:127
+        #    o = Pauli(N, Z=[j])
+        e[Int(i)+1] += UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
+#        end
+        @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i)+1]), imag(e[Int(i)+1]))
+        
     end
-
-    # plot(final_vals_stoc, ribbon=final_vals_errs, marker=:circle)
-    # plot!(final_vals)
-    # savefig("plot.pdf")
-    return final_vals_stoc, final_vals_errs
+    
+    plot(angles, real(e))
+#    xlabel!("Angles")
+#    ylabel!("expectation value")
+#    title!{X_{13,29,31}, Y_{9,30}, Z_{8,12,17,28,32}}
+#    savefig("plot.pdf")
+    return e
 end
 
 @time v,e = run(N=127)
