@@ -20,9 +20,9 @@ function deterministic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::
     expval = zero(ComplexF64)
 
 
-    opers = PauliSum{N}(Dict(o.pauli=>1.0*(1im)^o.θ))#Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.pauli.z,o.pauli.x)=>1.0*(1im)^o.θ)
-        
-    
+    # opers = PauliSum{N}(Dict(o.pauli=>1.0*(1im)^o.θ))#Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.pauli.z,o.pauli.x)=>1.0*(1im)^o.θ)
+    opers = PauliSum(o)
+   
     for t in 1:nt
 
         g = generators[t]

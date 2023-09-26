@@ -1,7 +1,7 @@
 using Distributed
 @everywhere begin
     using UnitaryPruning
-    using Plots
+    # using Plots
     using Statistics
     using Printf
     using Random
@@ -30,16 +30,12 @@ function run(; N=6)
         α = i * π / 32
         generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
         angles[Int(i/2)+1] = α
-    #    generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
-        #for j in 1:127
-        #    o = Pauli(N, Z=[j])
         e[Int(i/2)+1] += UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-#        end
         @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
         
     end
     
-    plot(angles, real(e))
+    # plot(angles, real(e))
 #    xlabel!("Angles")
 #    ylabel!("expectation value")
 #    title!{X_{13,29,31}, Y_{9,30}, Z_{8,12,17,28,32}}
@@ -47,4 +43,15 @@ function run(; N=6)
     return e
 end
 
-@time v,e = run(N=127)
+# @time v,e = run(N=127);
+
+function run_eagle(α, o::Pauli{N}; k=5, ket_idx=0) where N
+    N == 127 || throw(DimensionMismatch)
+    ket = KetBitString(N, ket_idx) 
+    generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
+    expval = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
+    return expval
+end        
+
+@time run_eagle(π/4, Pauli(127, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33]))
+    
