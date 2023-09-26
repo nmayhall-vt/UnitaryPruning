@@ -33,9 +33,9 @@ function run(; N=6)
     #    generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
         #for j in 1:127
         #    o = Pauli(N, Z=[j])
-        e[Int(i)+1] += UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
+        e[Int(i/2)+1] += UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
 #        end
-        @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i)+1]), imag(e[Int(i)+1]))
+        @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
         
     end
     
