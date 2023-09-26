@@ -1,4 +1,4 @@
-@everywhere function get_unitary_sequence_1D(o::Pauli{N}; α=.01, k=10) where N
+function get_unitary_sequence_1D(o::Pauli{N}; α=.01, k=10) where N
     generators = Vector{Pauli{N}}([])
     parameters = Vector{Float64}([])
     # print("alpha", α, "\n")
@@ -20,7 +20,7 @@
         # e^{i αn (-X) / 2}
         for i in 1:N
             pi = Pauli(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
+            pi = Pauli{N}((pi.θ + 2)%4, pi.pauli) # this accounts for the fact that the papers have -X and positive ZZ
             push!(generators, pi)
             push!(parameters, α)
         end
@@ -30,7 +30,7 @@
 end
 
 
-@everywhere function get_unitary_sequence_2D(o::Pauli{N}; α=.01, k=10) where N
+function get_unitary_sequence_2D(o::Pauli{N}; α=.01, k=10) where N
 
 
     generators = Vector{Pauli{N}}([])
@@ -62,7 +62,7 @@ end
         # e^{i αn Pn / 2}
         for i in 1:N
             pi = Pauli(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
+            pi = Pauli{N}((pi.θ + 2)%4, pi.pauli) # this accounts for the fact that the papers have -X and positive ZZ
             push!(generators, pi)
             push!(parameters, α)
         end

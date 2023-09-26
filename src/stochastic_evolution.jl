@@ -5,7 +5,7 @@ using Random
 
 Stochastically sample the leaves of the binary tree where the probability of observing a leaf is proportional to its coefficient
 """
-function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
+function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket; nsamples=1000) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -37,13 +37,13 @@ function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; ns
 
         # 
         # Loop through the generators in reverse, i.e., from the operator to the state
-        for t in reverse(1:nt)
+        for t in 1:nt
             g = generators[t]
            
             # @printf(" %12.8f %s\n", bias[t], string(g))
             #
             # First check to see if the current generator commutes with our current operator
-            commute(oi, g) == false || continue
+            commute(oi.pauli, g.pauli) == false || continue
 
             #
             # Our bias goes from 0 -> 1 depending on if we should branch toward cos or sin respectively
@@ -52,13 +52,13 @@ function stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; ns
             # if branch is true, we consider sin branch, else consider cos
             if branch
                 # sin branch
-                oi = multiply(g, oi)    # multiply the pauli's
-                oi = oi + 1             # multiply the sin branch pauli by 1im
+                oi = g * oi    # multiply the pauli's
+                oi = Pauli{N}((oi.θ + 1)%4, oi.pauli)             # multiply the sin branch pauli by 1im
             end
             scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
         end
     
-        expval[s] = scale * expectation_value_sign(oi, ket)
+        expval[s] = scale * PauliOperators.expectation_value_sign(oi, ket)
     end
     
     return expval
@@ -73,7 +73,7 @@ end
 
 Not yet used for anything
 """
-function get_random_leaf(generators::Vector{PauliBoolVec{N}}, angles, o_in::PauliBoolVec{N}, ket) where N
+function get_random_leaf(generators::Vector{Pauli{N}}, angles, o_in::Pauli{N}, ket) where N
 
     o = deepcopy(o_in)
     #

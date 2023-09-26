@@ -7,72 +7,7 @@ using Distributed
     using Random
     using LinearAlgebra
     using SharedArrays
-end
-
-@everywhere function get_unitary_sequence_1D(o::PauliBitString{N}; α=.01, k=10) where N
-    generators = Vector{PauliBitString{N}}([])
-    parameters = Vector{Float64}([])
-
-    # Loop over trotter steps
-    for ki in 1:k
-        ## ZZ layer
-        # e^{i π/2 P2} e^{i π P1 /2}|ψ>
-        for i in 1:N-1
-            pi = PauliBitString(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π/2)
-        end
-            
-        #pbc 
-        pi = PauliBitString(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π/2)
-
-        ## X layer
-        # e^{i αn (-X) / 2}
-        for i in 1:N
-            pi = PauliBitString(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
-            push!(generators, pi)
-            push!(parameters, α)
-        end
-    end
-
-    return generators, parameters
-end
-
-@everywhere function get_unitary_sequence_1D(o::PauliBoolVec{N}; α=.01, k=10) where N
-   
-    generators = Vector{PauliBoolVec{N}}([])
-    parameters = Vector{Float64}([])
-
-    # Loop over trotter steps
-    for ki in 1:k
-        
-        ## ZZ layer
-        # e^{i π/4 P2} e^{i π P1 /4}|ψ>
-        for i in 1:N-1
-            pi = PauliBoolVec(N, Z=[i, i + 1])
-            push!(generators, pi)
-            push!(parameters, π/2)
-        end
-            
-        #pbc 
-        pi = PauliBoolVec(N, Z=[N, 1])
-        push!(generators, pi)
-        push!(parameters, π/2 )
-
-        ## X layer
-        # e^{i αn Pn / 2}
-        for i in 1:N
-            pi = PauliBoolVec(N, X=[i])
-            pi += 2 # this accounts for the fact that the papers have -X and positive ZZ
-            push!(generators, pi)
-            push!(parameters, α)
-        end
-    end
-
-    return generators, parameters
+    using PauliOperators
 end
 
 @everywhere function compute_run(generators, parameters, o, ket, nsamples; seed=1)
@@ -96,20 +31,11 @@ function run(; nruns=100, nsamples=1000, N=6)
     #
     # Uncomment to use bitstrings
     #
-    ket = BasisState(N, 0) 
-    o = PauliBitString(N, Z=[5])
-    o = PauliBitString(N, Y=[1])
-    # o = PauliBitString(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
-    #o = PauliBitString(N, Z=[1])
-
-    #
-    # Uncomment to use boolvecs
-    #
-    # ket = zeros(Bool,N)
-    # o = PauliBoolVec(N, Z=[1, 2, 3, 4, 5, 6])
-    # o = PauliBoolVec(N, Z=[1, 2])
-#    o = PauliBoolVec(N, Y=[1])
-    # o = PauliBoolVec(N, Z=[1])
+    ket = KetBitString(N, 0) 
+#    o = Pauli(N, Z=[5])
+    o = Pauli(N, Z=[1])
+    # o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
+    #o = Pauli(N, Z=[1])
 
     final_vals_stoc = []
     final_vals_errs = []
@@ -126,20 +52,20 @@ function run(; nruns=100, nsamples=1000, N=6)
         # Uncomment the following to do a parallel run "addprocs(3; exeflags="--project")"
         #
         # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
-        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=2)
-        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
-            compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-        end
+#        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=2)
+#        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
+#            compute_run(generators, parameters, o, ket, nsamples, seed=runi)
+#        end
         
         #
         # Uncomment the following to do a serial run
         #
-        # generators, parameters = get_unitary_sequence_1D(o, α=i * π / 32, k=5)
-        # for runi in 1:nruns
-        #     a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-        #     avg_traj .+= a
-        #     var_traj .+= b
-        # end
+        generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=i * π / 32, k=2)
+        for runi in 1:nruns
+             a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
+             avg_traj .+= a
+             var_traj .+= b
+        end
 
 
         var_traj .= var_traj .- (avg_traj .* avg_traj) ./ nruns
@@ -170,4 +96,4 @@ function run(; nruns=100, nsamples=1000, N=6)
 end
 
 
-@time v,e = run(nruns=300, nsamples=2000, N=6)
+@time v,e = run(nruns=100, nsamples=1000, N=3)
