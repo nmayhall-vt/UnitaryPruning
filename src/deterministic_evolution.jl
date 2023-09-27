@@ -103,7 +103,9 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
     o_transformed = deepcopy(o)
   
     n_ops = zeros(Int,nt)
-    
+
+    discarded_weight = 0.0
+
     for t in 1:nt
 
         g = generators[t]
@@ -112,30 +114,44 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
 
         for (oi,coeff) in o_transformed.ops
            
-            abs(coeff) > thresh || continue
-
-
             if commute(oi, g.pauli) == false
                 
                 # cos branch
-                o_transformed[oi] = coeff * vcos[t]
+                coeffi = coeff * vcos[t]
+                o_transformed[oi] = coeffi 
 
                 # sin branch
                 oj = g * oi    # multiply the pauli's
-                sum!(sin_branch, oj * vsin[t] * coeff * 1im)
+                coeffi = coeff * vsin[t]
+                # abs(coeffi) > thresh || continue
+                
+                sum!(sin_branch, oj * coeffi * 1im)
+                
+                # if haskey(sin_branch, oj.pauli) 
+                #     sin_branch[oj.pauli] += coeffi * (1im)^oj.θ
+                # else
+                #     sin_branch[oj.pauli]  = coeffi * (1im)^oj.θ
+                # end
 
             end
         end
         sum!(o_transformed, sin_branch) 
-        clip!(o_transformed, thresh=thresh)
+        # clip!(o_transformed, thresh=thresh)
+        for (oi,coeff) in o_transformed.ops
+            if abs(coeff) < thresh
+                discarded_weight += coeff*expectation_value(oi, ket)
+                delete!(o_transformed.ops, oi)
+            end
+        end
         n_ops[t] = length(o_transformed)
     end
 
     for (oi,coeff) in o_transformed.ops
         expval += coeff*expectation_value(oi, ket)
     end
-   
-    return expval, n_ops
+  
+    # println(discarded_weight)
+    return expval, n_ops, discarded_weight
 end
 
 

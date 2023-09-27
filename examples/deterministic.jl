@@ -22,21 +22,25 @@ function run(; N=6)
 
     angles = zeros(Float64,17)
     e = zeros(ComplexF64,17)
-    for i in [(i-1)*2 for i in 1:17]
+    # for i in [(i-1)*2 for i in 1:17]
+    for i in 0:16
 #    for i in 3:3        
         #
         # Uncomment the following to do a serial run
         #
         α = i * π / 32
         generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
-        angles[Int(i/2)+1] = α
+        # angles[Int(i/2)+1] = α
+        angles[i+1] = α
         
-        # ei , nops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-        ei , nops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-3)
+        # ei , nops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=4e-4)
+        ei , nops, corr = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=8e-4)
        
-        e[Int(i/2)+1] += ei
+        # e[Int(i/2)+1] += ei
+        e[i+1] += ei
         # @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
-        @printf(" α: %6.4f e: %12.8f+%12.8fi nops: %i\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]), maximum(nops))
+        # @printf(" α: %6.4f e: %12.8f+%12.8fi nops: %i\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]), maximum(nops))
+        @printf(" α: %6.4f e: %12.8f+%12.8fi  corrected: %12.8f nops: %i\n", α, real(ei), imag(ei), real(ei+corr), maximum(nops))
         
     end
     
@@ -55,9 +59,8 @@ function run_eagle(α, o::Pauli{N}; k=5, ket_idx=0) where N
     ket = KetBitString(N, ket_idx) 
     generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
     # expval, n_ops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-    expval, n_ops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-3)
-    return expval, n_ops
+    return UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=4e-4)
 end        
 
-# @time expval, n_ops2 = run_eagle(π/4, Pauli(127, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33]))
+# @time expval, n_ops2, dis_weight = run_eagle(π/4, Pauli(127, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33]))
     
