@@ -62,7 +62,7 @@ version = "0.1.7"
 deps = ["Arpack", "InteractiveUtils", "LinearAlgebra", "LinearMaps", "Printf", "Random"]
 git-tree-sha1 = "181fe1ffc1f9adb45e558be29f9a76d1a4b17757"
 repo-rev = "main"
-repo-url = "git@github.com:nmayhall-vt/BlockDavidson.jl.git"
+repo-url = "https://github.com/nmayhall-vt/BlockDavidson.jl"
 uuid = "b4c031f8-e7c9-4879-896c-063a10ff8103"
 version = "0.1.0"
 
@@ -719,9 +719,9 @@ version = "2.7.2"
 
 [[deps.PauliOperators]]
 deps = ["BenchmarkTools", "BlockDavidson", "Documenter", "InteractiveUtils", "LinearAlgebra", "Printf", "Random", "StatProfilerHTML"]
-git-tree-sha1 = "060fbb2eb83cefa20c0c18455e0aa1f7bc74e4c5"
+git-tree-sha1 = "b0d8717a3df4390c7dbd0bf193fa043dea07b671"
 repo-rev = "main"
-repo-url = "git@github.com:nmayhall-vt/PauliOperators.jl.git"
+repo-url = "https://github.com/nmayhall-vt/PauliOperators.jl"
 uuid = "be646426-f34c-4536-b1d4-a45a9633e6db"
 version = "1.0.0-DEV"
 
