@@ -10,18 +10,6 @@ using PauliOperators
 #
 #   exp(i θ/2 (-X)) exp(i π/4 ZZ)
 #
-function build_time_evolution_matrix(generators::Vector{Pauli{N}}, angles::Vector) where N
-    U = Matrix(Pauli(N))
-    nt = length(generators)
-    length(angles) == nt || throw(DimensionMismatch)
-    for t in 1:nt
-        α = angles[t]
-        U = cos(α/2) .* U .+ 1im*sin(α/2) .* Matrix(generators[t]) * U
-
-    end
-
-    return U 
-end
 
 function run(;α=.01, k=10, N=6)
 
@@ -42,7 +30,7 @@ function run(;α=.01, k=10, N=6)
 
     o_mat = Matrix(o)
 
-    U = build_time_evolution_matrix(generators, parameters)
+    U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
     
     m = diag(U'*o_mat*U)
     # println(" expectation values:")
