@@ -1,16 +1,3 @@
-using Distributed
-@everywhere begin
-    using UnitaryPruning
-    using Plots
-    using Statistics
-    using Printf
-    using Random
-    using LinearAlgebra
-    using SharedArrays
-    using PauliOperators
-end
-
-
 
 @everywhere function compute_run(generators, parameters, o, ket, nsamples; seed=1)
     Random.seed!(seed)
@@ -28,16 +15,13 @@ end
 end
 
 
-function run(; nruns=100, nsamples=1000, N=6)
-   
-    #
-    # Uncomment to use bitstrings
-    #
-    ket = KetBitString(N, 0) 
-#    o = Pauli(N, Z=[5])
+function run(; nruns=100, nsamples=1000, k=5, ket_idx=0)
+    N = 127 
     o = Pauli(N, Z=[1])
-    # o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
-    #o = Pauli(N, Z=[1])
+    o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
+    
+    ket = KetBitString(N, ket_idx) 
+   
 
     final_vals_stoc = []
     final_vals_errs = []
@@ -45,24 +29,14 @@ function run(; nruns=100, nsamples=1000, N=6)
     for i in [(i-1)*2 for i in 1:9]
     # for i in 8:8
     # for i in 2:2 
+    
+        α = i * π / 32
+        generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=k)
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
         std_traj = zeros(nsamples)
 
-        #
-        # Uncomment the following to do a parallel run "addprocs(3; exeflags="--project")"
-        #
-        # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
-#        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=2)
-#        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
-#            compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-#        end
-        
-        #
-        # Uncomment the following to do a serial run
-        #
-        generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=i * π / 32, k=2)
         for runi in 1:nruns
              a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
              avg_traj .+= a
@@ -98,4 +72,5 @@ function run(; nruns=100, nsamples=1000, N=6)
 end
 
 
-@time v,e = run(nruns=100, nsamples=1000, N=3)
+@time v,e = run(nruns=100, nsamples=1000)
+

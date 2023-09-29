@@ -42,7 +42,8 @@ end
 # run(;α=.01, k=30)
 
 final_vals = []
-for i in [(i-1)*2 for i in 1:16]
+# for i in # :16
+for i in [(i-1)*2 for i in 1:9]
     ei = run(α=i*π/32, k=2, N=3)
     push!(final_vals, real(ei))
     @printf(" α: %4i val: %12.8f\n", i, ei)

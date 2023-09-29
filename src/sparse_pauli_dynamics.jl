@@ -5,9 +5,7 @@ using Statistics
 """
 loop over each cos branch
 """
-function spd2(ref_state::Vector{Bool}, o::PauliBoolVec{N}, generators::Vector{P}, angles::Vector{T};
-    thresh      =   1e-12,
-    max_depth   =   100) where {T,N,P<:Pauli}
+function spd(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thresh=1e-3, max_depth   =   100) where {T,N,P<:Pauli}
 
     nt = length(generators)
 

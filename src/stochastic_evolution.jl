@@ -58,7 +58,7 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
             scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
         end
     
-        expval[s] = scale * PauliOperators.expectation_value_sign(oi, ket)
+        expval[s] = scale * PauliOperators.expectation_value(oi, ket)
     end
     
     return expval
@@ -67,51 +67,3 @@ end
 
 
 
-
-""""
-    stochastic_pauli_rotations_run(generators::Vector{PauliBoolVec{N}}, angles, o::PauliBoolVec{N}) where N
-
-Not yet used for anything
-"""
-function get_random_leaf(generators::Vector{Pauli{N}}, angles, o_in::Pauli{N}, ket) where N
-
-    o = deepcopy(o_in)
-    #
-    # for a single pauli Unitary, Un = exp(-i θn Pn/2)
-    # U' O U = cos(θ/2) O - i sin(θ/2) PO
-    nt = length(generators)
-    length(angles) == nt || throw(DimensionMismatch)
-
-    scale = 1.0
-    path = 1
-    sin_angles = sin.(angles)
-    cos_angles = cos.(angles)
-  
-    for t in reverse(1:nt)
-        g = generators[t]
-        commute(o,g) == false || continue
-
-       
-
-        if rand() < .5 
-            # sin branch
-
-            # rand() < sin_angles[t] || return 0.0, path
-            # rand() < sin_angles[t] || continue 
-
-            # println("sin: ", bias[t])
-            # error("here")
-            o = multiply(g,o)
-            o.θ = (o.θ + 3) % 4
-
-            scale *= sin_angles[t]
-
-        else
-            scale *= cos_angles[t]
-        end
-    end
-
-    # return expectation_value_sign(o,ket), path
-    return scale * expectation_value_sign(o,ket), path
-
-end

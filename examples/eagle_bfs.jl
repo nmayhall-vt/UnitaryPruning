@@ -22,7 +22,7 @@ function run(; N=6)
 
     angles = zeros(Float64,17)
     e = zeros(ComplexF64,17)
-    for i in [(i-1)*2 for i in 1:17]
+    for i in [(i-1)*2 for i in 1:9]
 #    for i in 3:3        
         #
         # Uncomment the following to do a serial run
