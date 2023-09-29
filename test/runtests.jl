@@ -5,9 +5,7 @@ using Random
 Random.seed!(1234567)
 
 @testset "UnitaryPruning" begin
-    include("test_PauliStrings.jl")
-    include("test_PauliMask.jl")
-    include("test_PauliBoolVec.jl")
     include("test_dfs.jl")
+    include("test_BFS.jl")
 end
 

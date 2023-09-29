@@ -1,11 +1,11 @@
 using Random
 using BenchmarkTools
 """
-    deterministic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; threshold) where {N, P<:Pauli}
+    deterministic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
 
 
 """
-function deterministic_pauli_rotations_BFS(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
+function deterministic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -20,15 +20,17 @@ function deterministic_pauli_rotations_BFS(generators::Vector{Pauli{N}}, angles,
     expval = zero(ComplexF64)
 
 
-    opers = PauliSum{N}(Dict(o.pauli=>1.0*(1im)^o.θ))#Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.pauli.z,o.pauli.x)=>1.0*(1im)^o.θ)
-        
+    # opers = PauliSum{N}(Dict(o.pauli=>1.0*(1im)^o.θ))#Dict{Tuple{Int128, Int128}, Complex{Float64}}((o.pauli.z,o.pauli.x)=>1.0*(1im)^o.θ)
+    opers = PauliSum(o)
+  
+    n_ops = zeros(Int,nt)
     
     for t in 1:nt
 
         g = generators[t]
-        branch_opers = PauliSum(N)#Dict{Tuple{Int128, Int128}, Complex{Float64}}()
+        branch_opers = PauliSum(N)
 
-#        sizehint!(branch_opers, 1000)
+        sizehint!(branch_opers.ops, 1000)
         for (key,value) in opers.ops
             
             oi = key
@@ -62,21 +64,28 @@ function deterministic_pauli_rotations_BFS(generators::Vector{Pauli{N}}, angles,
                 end
             end
         end
+        n_ops[t] = length(branch_opers)
         opers = deepcopy(branch_opers) # Change the list of operators to the next row
 
     end
 
     for (key,value) in opers.ops
         oper = Pauli(UInt8(0), key)
-        expval += value*PauliOperators.expectation_value_sign(oper, ket)
+        expval += value*PauliOperators.expectation_value(oper, ket)
     end
-    
-    return expval
+   
+    return expval, n_ops
 end
 
 
 
-function deterministic_pauli_rotations_DFS(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
+
+"""
+    bfs_evolution(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
+
+
+"""
+function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket ; thresh=1e-3) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -91,48 +100,42 @@ function deterministic_pauli_rotations_DFS(generators::Vector{Pauli{N}}, angles,
     expval = zero(ComplexF64)
 
 
-    opers = ScaledPauliVector{N}([ScaledPauli(o)])
-        
+    o_transformed = deepcopy(o)
+  
+    n_ops = zeros(Int,nt)
     
     for t in 1:nt
 
         g = generators[t]
-        branch_opers = ScaledPauliVector(N)
 
-#        sizehint!(branch_opers, 1000)
-        for sp in opers
-            
-            oi = sp.pauli
-            if commute(oi, g.pauli)
-                push!(branch_opers, sp)
-                continue
-            end
-            if abs(sp.coeff) > thres #If greater than threshold then split the branches
-                # cos branch
-                coeff = vcos[t] * sp.coeff
-                push!(branch_opers, ScaledPauli{N}(coeff, oi))
-                           
-                # sin branch
-                coeff = vsin[t] * 1im * sp.coeff
+        sin_branch = PauliSum(N)
+
+        for (oi,coeff) in o_transformed.ops
            
-                oi = Pauli{N}(0, oi)
-                oi = g * oi    # multiply the pauli's
-                coeff = coeff * (1im)^oi.θ
-                push!(branch_opers, ScaledPauli{N}(coeff, oi.pauli))
+            abs(coeff) > thresh || continue
+
+
+            if commute(oi, g.pauli) == false
+                
+                # cos branch
+                o_transformed[oi] = coeff * vcos[t]
+
+                # sin branch
+                oj = g * oi    # multiply the pauli's
+                sum!(sin_branch, oj * vsin[t] * coeff * 1im)
+
             end
         end
-        opers = deepcopy(branch_opers) # Change the list of operators to the next row
-
+        sum!(o_transformed, sin_branch) 
+        clip!(o_transformed, thresh=thresh)
+        n_ops[t] = length(o_transformed)
     end
 
-    for sp in opers
-        oper = Pauli(UInt8(0), sp.pauli)
-        expval += sp.coeff*PauliOperators.expectation_value_sign(oper, ket)
+    for (oi,coeff) in o_transformed.ops
+        expval += coeff*expectation_value(oi, ket)
     end
-    
-    return expval
+   
+    return expval, n_ops
 end
-
-
 
 
