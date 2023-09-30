@@ -78,7 +78,7 @@ function build_time_evolution_matrix(generators::Vector{Pauli{N}}, angles::Vecto
     length(angles) == nt || throw(DimensionMismatch)
     for t in 1:nt
         α = angles[t]
-        U = cos(α/2) .* U .- 1im*sin(α/2) .* U *Matrix(generators[t])
+        U = cos(α/2) .* U .- 1im*sin(α/2) .* U * Matrix(generators[t])
 
     end
 

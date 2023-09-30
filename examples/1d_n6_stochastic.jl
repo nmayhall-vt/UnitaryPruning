@@ -28,41 +28,25 @@ end
 end
 
 
-function run(; nruns=100, nsamples=1000, N=6)
+function run(; nruns=100, nsamples=1000, N=6, k=5)
    
     #
     # Uncomment to use bitstrings
     #
     ket = KetBitString(N, 0) 
-#    o = Pauli(N, Z=[5])
     o = Pauli(N, Z=[1])
-    # o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
-    #o = Pauli(N, Z=[1])
 
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in [(i-1)*2 for i in 1:9]
-    # for i in 8:8
-    # for i in 2:2 
+    # for i in [(i-1)*2 for i in 1:9]
+    for i in 0:16
 
         avg_traj = zeros(nsamples)
         var_traj = zeros(nsamples)
         std_traj = zeros(nsamples)
 
-        #
-        # Uncomment the following to do a parallel run "addprocs(3; exeflags="--project")"
-        #
-        # @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=5)
-#        @everywhere generators, parameters = get_unitary_sequence_1D($o, α=$i * π / 32, k=2)
-#        avg_traj, var_traj = @sync @distributed (.+) for runi in 1:nruns
-#            compute_run(generators, parameters, o, ket, nsamples, seed=runi)
-#        end
-        
-        #
-        # Uncomment the following to do a serial run
-        #
-        generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=i * π / 32, k=2)
+        generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=i * π / 32, k=k)
         for runi in 1:nruns
              a, b = compute_run(generators, parameters, o, ket, nsamples, seed=runi)
              avg_traj .+= a
@@ -84,18 +68,18 @@ function run(; nruns=100, nsamples=1000, N=6)
         # Plot stuff
         #
         # plot(trajectories, ylim=[-1,1], legend=false, color=:grey, alpha=.1)
-        plot(avg_traj, color=:black, ribbon=std_traj, ylim=[-1, 1], legend=false, dpi=300)
-        filename = @sprintf "%05i.png" i
-        savefig(filename)
+        # plot(avg_traj, color=:black, ribbon=std_traj, ylim=[-1, 1], legend=false, dpi=300)
+        # filename = @sprintf "%05i.png" i
+        # savefig(filename)
         push!(final_vals_stoc, avg_traj[end])
         push!(final_vals_errs, std_traj[end])
     end
 
     plot(final_vals_stoc, ribbon=final_vals_errs, marker=:circle)
-    # plot!(final_vals)
-    savefig("plot.pdf")
+    xlabel!("Angle")
+    savefig("plot_1d_n6_stochastic.pdf")
     return final_vals_stoc, final_vals_errs
 end
 
 
-@time v,e = run(nruns=100, nsamples=1000, N=3)
+@time v,e = run(nruns=100, nsamples=1000, k=80)
