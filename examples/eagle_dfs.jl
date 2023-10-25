@@ -1,7 +1,7 @@
 using Distributed
 @everywhere begin
     using UnitaryPruning
-    using Plots
+    # using Plots
     using Statistics
     using Printf
     using Random
@@ -35,12 +35,12 @@ function run(;thresh=1e-3)
         
     end
     
-    plot(angles, real(e))
-#    xlabel!("Angles")
-#    ylabel!("expectation value")
-#    title!{X_{13,29,31}, Y_{9,30}, Z_{8,12,17,28,32}}
-   savefig("plot_eagle_dfs.pdf")
+    # plot(angles, real(e))
+    # xlabel!("Angles")
+    # ylabel!("expectation value")
+    # title!{X_{13,29,31}, Y_{9,30}, Z_{8,12,17,28,32}}
+    # savefig("plot_eagle_dfs.pdf")
     return e
 end
 
-@time v,e = run(thresh=1e-4)
+@time v,e = run(thresh=1e-3)

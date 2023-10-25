@@ -4,7 +4,7 @@ using BenchmarkTools
 using PauliOperators
 using LinearAlgebra
 
-@testset "deterministic_pauli_rotations_BFS" begin
+@testset "bfs_evolution" begin
 
     N = 6
     ket = KetBitString(N, 0)
@@ -15,12 +15,15 @@ using LinearAlgebra
         for i in 1:2:16
             α = i * π/32
             generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=α, k=2)
-            e = UnitaryPruning.deterministic_pauli_rotations_BFS(generators, parameters, o, ket, thres=1e-4)
-            o_mat = Matrix(o)
+            # e = UnitaryPruning.bfs_evolution(generators, parameters, o, ket, thres=1e-4)
+        
+            e , nops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-4)
+            
             U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
+            o_mat = Matrix(o)
             m = diag(U'*o_mat*U)
 
-            println(m[1], e)
+            # println(m[1], e)
             @test(abs(real(e)-real(m[1])) <= 1e-3)
         end
      end
