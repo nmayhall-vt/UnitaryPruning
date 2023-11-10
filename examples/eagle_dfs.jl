@@ -20,8 +20,8 @@ function run(;thresh=1e-3)
 
     e = Vector{ComplexF64}([]) 
     angles = Vector{Float64}([]) 
-    # for i in 0:16 
-    for i in 8:8 
+    for i in 0:16 
+    # for i in 8:8 
         α = i * π / 32
         generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
         ei, l2a, l2b = UnitaryPruning.dfs_evolution(generators, parameters, 1.0, o, ket, thresh=thresh)
@@ -39,4 +39,4 @@ function run(;thresh=1e-3)
     return e
 end
 
-@time e = run(thresh=1e-4)
+@time e = run(thresh=1e-5)

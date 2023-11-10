@@ -96,8 +96,6 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
     vcos = cos.(angles)
     vsin = sin.(angles)
 
-    # collect our results here...
-    expval = zero(ComplexF64)
 
 
     o_transformed = deepcopy(o)
@@ -133,12 +131,16 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
         clip!(o_transformed, thresh=thresh)
         n_ops[t] = length(o_transformed)
     end
+    
+    l2 = 0.0
+    expval = zero(ComplexF64)
 
     for (oi,coeff) in o_transformed.ops
         expval += coeff*expectation_value(oi, ket)
+        l2 += abs2(coeff)
     end
    
-    return expval, n_ops
+    return expval, n_ops, sqrt(l2)
 end
 
 

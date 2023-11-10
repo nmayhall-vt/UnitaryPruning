@@ -11,7 +11,7 @@ using Distributed
 
 end
 
-function run(; N=6)
+function run(; N=6, thresh=1e-3)
    
     ket = KetBitString(N, 0) 
 #    o = Pauli(N, Z=[5])
@@ -28,13 +28,13 @@ function run(; N=6)
         generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
         
         # ei , nops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-        ei , nops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-3, max_weight=8)
+        ei , nops, l2 = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=thresh, max_weight=8)
        
         push!(e, ei)
         push!(angles, α)
         
         # @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
-        @printf(" α: %6.4f e: %12.8f +%12.8fi nops: %i\n", α, real(ei), imag(ei), maximum(nops))
+        @printf(" α: %6.4f e: %12.8f +%12.8fi l2: %12.8f nops: %i\n", α, real(ei), imag(ei), l2, maximum(nops))
         
     end
     
@@ -46,7 +46,7 @@ function run(; N=6)
     return e
 end
 
-@time v,e = run(N=127);
+@time v,e = run(N=127, thresh=1e-4);
 
 function run_eagle(α, o::Pauli{N}; k=5, ket_idx=0) where N
     N == 127 || throw(DimensionMismatch)
