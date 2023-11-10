@@ -85,7 +85,7 @@ end
 
 
 """
-function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket ; thresh=1e-3) where {N}
+function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket ; thresh=1e-3, max_weight=4) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -123,6 +123,9 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
                 # sin branch
                 oj = g * oi    # multiply the pauli's
                 sum!(sin_branch, oj * vsin[t] * coeff * 1im)
+                # if count_ones(oj.pauli.x | oj.pauli.z) < max_weight   
+                #     sum!(sin_branch, oj * vsin[t] * coeff * 1im)
+                # end
 
             end
         end

@@ -20,31 +20,29 @@ function run(; N=6)
 #    o = Pauli(N, Z=[2,5,7,8], Y=[1,3,4])
     o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
 
-    angles = zeros(Float64,17)
-    e = zeros(ComplexF64,17)
-    for i in [(i-1)*2 for i in 1:9]
-#    for i in 3:3        
-        #
-        # Uncomment the following to do a serial run
-        #
+    e = Vector{ComplexF64}([]) 
+    angles = Vector{Float64}([]) 
+    for i in 0:16 
+        
         α = i * π / 32
         generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
-        angles[Int(i/2)+1] = α
         
         # ei , nops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-        ei , nops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-3)
+        ei , nops = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=1e-3, max_weight=8)
        
-        e[Int(i/2)+1] += ei
+        push!(e, ei)
+        push!(angles, α)
+        
         # @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
-        @printf(" α: %6.4f e: %12.8f+%12.8fi nops: %i\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]), maximum(nops))
+        @printf(" α: %6.4f e: %12.8f +%12.8fi nops: %i\n", α, real(ei), imag(ei), maximum(nops))
         
     end
     
-    # plot(angles, real(e))
-#    xlabel!("Angles")
-#    ylabel!("expectation value")
+    plot(angles, real(e), marker=:circle)
+    xlabel!("Angles")
+    ylabel!("expectation value")
 #    title!{X_{13,29,31}, Y_{9,30}, Z_{8,12,17,28,32}}
-#    savefig("plot.pdf")
+    savefig("plot_eagle_bfs.pdf")
     return e
 end
 
