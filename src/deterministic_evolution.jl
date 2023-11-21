@@ -77,15 +77,43 @@ function deterministic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::
     return expval, n_ops
 end
 
+function weight(p::FixedPhasePauli) 
+    return  count_ones(p.x | p.z)
+end
 
+"""
+    my_clip!(ps::PauliSum{N}; thresh=1e-16) where {N}
 
+Clip small coefficients, with bias against higher weight pauli's
+"""
+function my_clip!(ps::PauliSum{N}; thresh=1e-16) where {N}
+    filter!(p->abs(p.second)/weight(p.first) > thresh, ps.ops)
+    # filter!(p->abs(p.second)/sqrt(weight(p.first)) > thresh, ps.ops)
+end
+
+"""
+    normalize!(ps)
+
+Normalize a `PauliSum`, `ps`
+"""
+function normalize!(ps)
+    l2 = 0.0
+    for (oi,coeff) in ps.ops
+        l2 += abs2(coeff)
+    end
+    l2 = sqrt(l2)
+    for (oi,coeff) in ps.ops
+        ps.ops[oi] /= l2
+    end
+    return l2
+end
 
 """
     bfs_evolution(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket ; thres=1e-3) where {N}
 
 
 """
-function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket ; thresh=1e-3, max_weight=4) where {N}
+function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket ; thresh=1e-3) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
@@ -128,19 +156,31 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
             end
         end
         sum!(o_transformed, sin_branch) 
-        clip!(o_transformed, thresh=thresh)
+        # clip!(o_transformed, thresh=thresh)
+        my_clip!(o_transformed, thresh=thresh)
+        # normalize!(o_transformed) #this makes things worse
         n_ops[t] = length(o_transformed)
     end
     
+    l1 = 0.0
     l2 = 0.0
+    l4 = 0.0
     expval = zero(ComplexF64)
 
     for (oi,coeff) in o_transformed.ops
         expval += coeff*expectation_value(oi, ket)
+        l1 += abs(coeff)
         l2 += abs2(coeff)
+        l4 += abs2(abs2(coeff))
     end
    
-    return expval, n_ops, sqrt(l2)
+    entropy = 0.0
+    for (oi,coeff) in o_transformed.ops
+        pi = abs2(coeff)/l2
+        entropy -= pi * log(2,pi) 
+    end
+   
+    return expval, n_ops, l1, sqrt(l2), l4^.25, entropy
 end
 
 

@@ -18,23 +18,28 @@ function run(; N=6, thresh=1e-3)
 #    o = Pauli(N, Y=[1])
 #    o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
 #    o = Pauli(N, Z=[2,5,7,8], Y=[1,3,4])
+    o = Pauli(N, Z=[63])
+    k = 20 
+    
     o = Pauli(N, X=[14,30,32], Y=[10,31], Z=[9,13,18,29,33])
+    k = 5
+
 
     e = Vector{ComplexF64}([]) 
     angles = Vector{Float64}([]) 
     for i in 0:16 
         
         α = i * π / 32
-        generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=5)
+        generators, parameters = UnitaryPruning.eagle_processor(o, α=α, k=k)
         
         # ei , nops = UnitaryPruning.deterministic_pauli_rotations(generators, parameters, o, ket, thres=1e-3)
-        ei , nops, l2 = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=thresh, max_weight=8)
+        ei , nops, l1, l2, l4, entropy = UnitaryPruning.bfs_evolution(generators, parameters, PauliSum(o), ket, thresh=thresh)
        
         push!(e, ei)
         push!(angles, α)
         
         # @printf(" α: %6.4f e: %12.8f+%12.8fi\n", α, real(e[Int(i/2)+1]), imag(e[Int(i/2)+1]))
-        @printf(" α: %6.4f e: %12.8f +%12.8fi l2: %12.8f nops: %i\n", α, real(ei), imag(ei), l2, maximum(nops))
+        @printf(" α: %6.4f e: %12.8f +%12.8fi l1: %12.8f l2: %12.8f l4: %12.8f shannon: %12.8f nops: %i\n", α, real(ei), imag(ei), l1, l2, 1-l4, entropy, maximum(nops))
         
     end
     
@@ -46,7 +51,7 @@ function run(; N=6, thresh=1e-3)
     return e
 end
 
-@time v,e = run(N=127, thresh=1e-4);
+@time v,e = run(N=127, thresh=1e-2);
 
 function run_eagle(α, o::Pauli{N}; k=5, ket_idx=0) where N
     N == 127 || throw(DimensionMismatch)

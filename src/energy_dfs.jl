@@ -26,17 +26,19 @@ function dfs_evolution(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ket
         end
     end 
 
-    my_expval::Vector{ComplexF64} = [0.0]
-    l2::Vector{Float64} = [0, 0]
+    # my_expval::Vector{ComplexF64} = [0.0]
+    # l2::Vector{Float64} = [0, 0]
+
+    expval = zero(ComplexF64)
+    l2diag = zero(Float64)
+    l2nondiag = zero(Float64)
 
     while length(stack) > 0
         oi, hi, op_idx = pop!(stack)
             
-    
-        # if op_idx == n_gen+1
-        #     _found_leaf(ket, my_expval, oi, hi, l2)
-        # elseif sqrt(abs2(hi)) > thresh
-        
+        # weight = count_ones(oi.pauli.x | oi.pauli.z)
+
+        # if sqrt(abs2(hi))/sqrt(weight) > thresh
         if sqrt(abs2(hi)) > thresh
             for op_idx2 in op_idx:n_gen
                 g = generators[op_idx2]
@@ -48,7 +50,10 @@ function dfs_evolution(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ket
                     hr = 1im * hi * vsin[op_idx2]
 
                     if op_idx2 == n_gen
-                        _found_leaf(ket, my_expval, or, hr, l2)
+                        expvali, l2diagi, l2nondiagi = _found_leaf(ket, or, hr)
+                        expval += expvali
+                        l2diag += l2diagi
+                        l2nondiag += l2nondiagi
                     else
                         push!(stack, (or, hr, op_idx2+1))
                     end
@@ -56,7 +61,10 @@ function dfs_evolution(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ket
                     # cos branch
                     hl = hi * vcos[op_idx2]
                     if op_idx2 == n_gen
-                        _found_leaf(ket, my_expval, oi, hl, l2)
+                        expvali, l2diagi, l2nondiagi = _found_leaf(ket, oi, hl)
+                        expval += expvali
+                        l2diag += l2diagi
+                        l2nondiag += l2nondiagi
                     else
                         push!(stack, (oi, hl, op_idx2+1))
                     end
@@ -64,14 +72,16 @@ function dfs_evolution(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ket
                     break
                 end 
                 if op_idx2 == n_gen
-                    _found_leaf(ket, my_expval, oi, hi, l2)
+                    expvali, l2diagi, l2nondiagi = _found_leaf(ket, oi, hi)
+                    expval += expvali
+                    l2diag += l2diagi
+                    l2nondiag += l2nondiagi
                 end
             end 
                 
         end
     end
-    return my_expval[1], l2[1], l2[2]
-    # return my_expval[1], l2[1], l2[2] 
+    return expval, l2diag, l2nondiag
 end
 
 
@@ -95,7 +105,7 @@ function dfs_evolution2(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ke
         oi, hi, op_idx, depth = pop!(stack)
     
         if op_idx == n_gen+1
-            _found_leaf(ket, my_expval, oi, hi, l2 )
+            _found_leaf2(ket, my_expval, oi, hi, l2 )
         elseif abs(hi) < thresh
             # _found_leaf(ket, my_expval, oi, hi, l2 )
         else
@@ -125,7 +135,18 @@ function dfs_evolution2(generators::Vector{Pauli{N}}, angles, h, o::Pauli{N}, ke
 end
 
 
-function _found_leaf(ket, energy::Vector, o, h, l2)
+function _found_leaf(ket, o, h)
+    if is_diagonal(o)
+        sign = expectation_value(o, ket) 
+
+        return sign*h, abs2(h), 0.0
+    else
+        return zero(ComplexF64), 0.0, abs2(h)
+    end
+end
+
+
+function _found_leaf2(ket, energy::Vector, o, h, l2)
     # error("nick")
     if is_diagonal(o)
         sign = expectation_value(o, ket) 
