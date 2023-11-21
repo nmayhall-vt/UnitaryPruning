@@ -24,7 +24,10 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
     #
     # collect our results here...
     expval = zeros(ComplexF64, nsamples)
-   
+  
+    # population = PauliSum(N)
+    population = Dict{Pauli{N},UInt}()
+    
     # 
     # loop over number of samples for this run 
     for s in 1:nsamples
@@ -57,11 +60,17 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
             end
             scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
         end
-    
+        # sum!(population, oi)
+        # population[oi] = get!(population, oi, 1)
+        if haskey(population, oi)
+            population[oi] += 1
+        else
+            population[oi] = 1
+        end 
         expval[s] = scale * PauliOperators.expectation_value(oi, ket)
     end
     
-    return expval
+    return expval, population
 end
 
 

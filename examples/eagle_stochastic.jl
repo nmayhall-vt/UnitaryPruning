@@ -3,9 +3,27 @@
     Random.seed!(seed)
     rolling_avg = zeros(nsamples)
     
-    samples = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, nsamples=nsamples)
+    samples, population = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, nsamples=nsamples)
     samples .= real.(samples)
 
+    expval = 0.0
+    l2 = 0.0
+    entropy = 0.0
+    for (oi,count) in population
+        prob_i = count / nsamples
+        
+        entropy -= log2(prob_i)*prob_i
+        
+        expval += sqrt(prob_i)*expectation_value(oi, ket)
+        
+        # expval += count*expectation_value(oi, ket)
+        l2 += prob_i 
+    end
+    
+   
+    @printf(" ev: %12.8f entropy: %12.8f pop: %5i\n", expval, entropy, length(population))
+    # @printf(" ev: %12.8f l2: %12.8f normalized <o>: %12.8f size of pop: %5i\n", expval, l2, expval/l2, length(population))
+    
     rolling_avg[1] = samples[1]
     
     for i in 2:nsamples
@@ -26,8 +44,8 @@ function run(; nruns=100, nsamples=1000, k=5, ket_idx=0)
     final_vals_stoc = []
     final_vals_errs = []
 
-    for i in [(i-1)*2 for i in 1:9]
-    # for i in 8:8
+    # for i in [(i-1)*2 for i in 1:9]
+    for i in 14:16
     # for i in 2:2 
     
         α = i * π / 32
@@ -48,11 +66,11 @@ function run(; nruns=100, nsamples=1000, k=5, ket_idx=0)
         avg_traj ./= nruns
         var_traj ./= nruns
 
-        std_traj = sqrt.(var_traj)
+        std_traj = sqrt.(abs.(var_traj))
         z = 1.96 # 95% confidence
         std_traj = z .* std_traj ./ sqrt(nruns)
 
-        @printf(" α: %4i avg: %12.8f ± %-12.6f var: %12.8f\n", i, avg_traj[end], std_traj[end], var_traj[end])
+        @printf(" α: %12.8f avg: %12.8f ± %-12.6f var: %12.8f\n", α, avg_traj[end], std_traj[end], var_traj[end])
 
         #
         # Plot stuff
@@ -72,5 +90,5 @@ function run(; nruns=100, nsamples=1000, k=5, ket_idx=0)
 end
 
 
-@time v,e = run(nruns=100, nsamples=1000)
+@time v,e = run(nruns=3, nsamples=100000)
 
