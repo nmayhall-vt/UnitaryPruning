@@ -29,7 +29,7 @@ function run(;k=5, N=6)
         push!(e, real(ei))
         push!(angles, α)
         
-        @printf(" α: %4i val: %12.8f\n", i, ei)
+        @printf(" i: %4i α: %12.8f val: %12.8f\n", i, α, ei)
     end
 
     plot(angles, real(e), marker = :circle)
@@ -39,7 +39,7 @@ function run(;k=5, N=6)
     return 
 end
 
-run(k=10, N=6)
+run(k=5, N=6)
 
 
 

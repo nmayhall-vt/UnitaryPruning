@@ -1,42 +1,35 @@
 using Random
 
 """
-    stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; nsamples=1000) where {N, P<:Pauli}
+    stochastic_pauli_rotations(generators::Vector{P}, angles, o::P, ket; sample_size=1000) where {N, P<:Pauli}
 
 Stochastically sample the leaves of the binary tree where the probability of observing a leaf is proportional to its coefficient
 """
-function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket; nsamples=1000) where {N}
+function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pauli{N}, ket; sample_size=1000) where {N}
 
     #
     # for a single pauli Unitary, U = exp(-i θn Pn/2)
     # U' O U = cos(θ) O + i sin(θ) OP
     
-    nt = length(angles)
+        nt = length(generators)
     length(angles) == nt || throw(DimensionMismatch)
 
     # 
     # Precompute the trig values to avoid doing so within the loop over samples
-    scales = sin.(angles) .+ cos.(angles) 
-    bias = sin.(angles) ./ scales
-       
-    # @btime stochastic_pauli_rotations_walk($generators, $o, $ket, $bias, $scales)
+    bias = sin.(angles) .* sin.(angles) 
+      
 
     #
-    # collect our results here...
-    expval = zeros(ComplexF64, nsamples)
-  
-    # population = PauliSum(N)
-    population = Dict{Pauli{N},UInt}()
+    # sample = PauliSum(N)
+    sample = Dict{Pauli{N},UInt}()
     
     # 
     # loop over number of samples for this run 
-    for s in 1:nsamples
+    for s in 1:sample_size
   
         #
         # initialize data for new walk down tree
-        scale = 1.0
-        nt = length(generators)
-        oi = o
+        oi = deepcopy(o)
 
         # 
         # Loop through the generators in reverse, i.e., from the operator to the state
@@ -46,7 +39,7 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
             # @printf(" %12.8f %s\n", bias[t], string(g))
             #
             # First check to see if the current generator commutes with our current operator
-            commute(oi.pauli, g.pauli) == false || continue
+            commute(oi, g) == false || continue
 
             #
             # Our bias goes from 0 -> 1 depending on if we should branch toward cos or sin respectively
@@ -58,19 +51,35 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
                 oi = g * oi    # multiply the pauli's
                 oi = Pauli{N}((oi.θ + 1)%4, oi.pauli)             # multiply the sin branch pauli by 1im
             end
-            scale *= scales[t]          # update the path scale with the current cos(a)+sin(a)
         end
-        # sum!(population, oi)
-        # population[oi] = get!(population, oi, 1)
-        if haskey(population, oi)
-            population[oi] += 1
+        if haskey(sample, oi)
+            sample[oi] += 1
         else
-            population[oi] = 1
+            sample[oi] = 1
         end 
-        expval[s] = scale * PauliOperators.expectation_value(oi, ket)
     end
+  
+    effective_sample_size = 0
+
+    # At this point, sample contains a list of up to 4*4^N Pauli's, which is larger than the full set of 
+    # 4^N Pauli's. The reason is that each Pauli contains a phase of either 1,-1,i,-i. 
+    H = PauliSum(N)
+    for (oi, count) in sample
+        prob_i = count / sample_size
+        prob_i > 0 || throw(ErrorException)
+        coeff = sqrt(prob_i)
+        sum!(H, coeff*oi)
+    end
+
     
-    return expval, population
+    l2 = 0.0
+    for (oi, coeff) in H.ops
+        l2 += abs2(coeff)
+    end
+    l2 = sqrt(l2)
+    H = H * (1/l2)
+    
+    return sample, H
 end
 
 

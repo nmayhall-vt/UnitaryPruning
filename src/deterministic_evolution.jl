@@ -166,9 +166,14 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
     l2 = 0.0
     l4 = 0.0
     expval = zero(ComplexF64)
-
+    avgval = 0.0
     for (oi,coeff) in o_transformed.ops
         expval += coeff*expectation_value(oi, ket)
+        # if real(coeff) < 0.0
+        #     avgval += abs2(coeff)*expectation_value(oi,ket)
+        # else
+        #     avgval += abs2(coeff)*expectation_value(oi,ket)
+        # end
         l1 += abs(coeff)
         l2 += abs2(coeff)
         l4 += abs2(abs2(coeff))
@@ -180,7 +185,7 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
         entropy -= pi * log(2,pi) 
     end
    
-    return expval, n_ops, l1, sqrt(l2), l4^.25, entropy
+    return expval, n_ops, l1, sqrt(l2), l4^.25, entropy, o_transformed
 end
 
 
