@@ -17,30 +17,7 @@ function compute_run(generators, parameters, o, ket, sample_size; seed=1, verbos
     
     sample, H = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, sample_size=sample_size)
 
-    clip!(H,thresh=1e-16)
-    l2 = 0.0
-    entropy = 0.0
-    for (oi,coeff) in H.ops 
-        prob_i = abs2(coeff)
-
-        entropy -= log2(prob_i)*prob_i
-
-        l2 += prob_i 
-    end
- 
-    expval = expectation_value(H, ket)
-    # abs(l2-1.0) < 1e-14 || @warn "normalization: ", l2
-    verbose < 1 || @printf(" ev: %12.8f entropy: %12.8f #ops: %5i l2: %12.8f\n", expval, entropy, length(sample), l2)
-
-    return expval
-end
-@everywhere function compute_run_old(generators, parameters, o, ket, sample_size; seed=1, verbose=1)
-    Random.seed!(seed)
-    
-    sample, H = UnitaryPruning.stochastic_pauli_rotations(generators, parameters, o, ket, sample_size=sample_size)
-
     expval = 0.0
-    avgval = 0.0
     l2 = 0.0
     entropy = 0.0
     for (oi,count) in sample 
@@ -48,22 +25,13 @@ end
         
         entropy -= log2(prob_i)*prob_i
         
-        expval += sqrt(prob_i)*expectation_value(oi, ket)
-        avgval += prob_i*expectation_value(oi, ket)
+        expval += sqrt(prob_i) * expectation_value(oi, ket)
         
-        # l2 += prob_i * get_phase(oi)*get_phase(adjoint(oi))
-        l2 += prob_i * abs2(get_phase(oi))
+        l2 += prob_i
     end
  
-    l2 = 0.0
-    for (oi,coeff) in H.ops
-        l2 += abs2(coeff)
-    end
-    # @show l2
-    expval = expectation_value(H, ket)
-    expval /= sqrt(l2)
-    # abs(l2-1.0) < 1e-14 || @warn "normalization: ", l2
-    verbose < 1 || @printf(" ev: %12.8f entropy: %12.8f #ops: %5i avgval: %12.8f\n", expval, entropy, length(sample), avgval)
+    abs(l2-1.0) < 1e-14 || @warn "normalization: ", l2
+    verbose < 1 || @printf(" ev: %12.8f entropy: %12.8f #ops: %5i \n", expval, entropy, length(sample))
 
     return expval
 end
@@ -89,7 +57,24 @@ function run(; nruns=100, sample_size=1000, N=6, k=5)
     for i in 8:8
         α = i*π/32
         generators, parameters = UnitaryPruning.get_unitary_sequence_1D(o, α=α, k=k)
-        
+       
+        g2 = similar(generators)
+        p2 = similar(parameters) 
+        n_repeat = 1 
+        for g in generators
+            for i in 1:n_repeat
+                push!(g2, g)
+            end
+        end
+        for p in parameters 
+            for i in 1:n_repeat
+                push!(p2, p/n_repeat)
+            end
+        end
+        generators = g2
+        parameters = p2
+
+
         U = UnitaryPruning.build_time_evolution_matrix(generators, parameters)
         ei = diag(U'*o_mat*U)[1]
 
@@ -133,4 +118,4 @@ function run(; nruns=100, sample_size=1000, N=6, k=5)
 end
 
 
-@time v,e = run(nruns=10, sample_size=100000, k=5)
+@time v,e = run(nruns=2, sample_size=100000, k=5)

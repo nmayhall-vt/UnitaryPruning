@@ -48,7 +48,7 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
             # if branch is true, we consider sin branch, else consider cos
             if branch
                 # sin branch
-                oi = g * oi    # multiply the pauli's
+                oi = oi * g     # multiply the pauli's
                 oi = Pauli{N}((oi.θ + 1)%4, oi.pauli)             # multiply the sin branch pauli by 1im
             end
         end
@@ -78,7 +78,9 @@ function stochastic_pauli_rotations(generators::Vector{Pauli{N}}, angles, o::Pau
     end
     l2 = sqrt(l2)
     H = H * (1/l2)
-    
+   
+    # @show length(sample)
+    # @show length(H.ops)
     return sample, H
 end
 
