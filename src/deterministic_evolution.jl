@@ -139,3 +139,55 @@ function bfs_evolution(generators::Vector{Pauli{N}}, angles, o::PauliSum{N}, ket
 end
 
 
+
+"""
+    bfs_evolution(generators::Vector{Pauli{N}}, angles::Vector{Real}, o::PauliSum{N}; thresh=1e-3) where {N}
+
+
+"""
+function bfs_evolution(generators::Vector{Pauli{N}}, angles::Vector{<:Real}, o::PauliSum{N}; thresh=1e-3) where {N}
+
+    #
+    # for a single pauli Unitary, U = exp(-i θn Pn/2)
+    # U' O U = cos(θ) O + i sin(θ) OP
+    nt = length(angles)
+    length(angles) == nt || throw(DimensionMismatch)
+    
+    vcos = cos.(angles)
+    vsin = sin.(angles)
+
+    o_transformed = deepcopy(o)
+  
+    n_ops = zeros(Int,nt)
+    
+    for t in 1:nt
+
+        g = generators[t]
+
+        sin_branch = PauliSum(N)
+
+        for (oi,coeff) in o_transformed.ops
+           
+            abs(coeff) > thresh || continue
+
+
+            if commute(oi, g.pauli) == false
+                
+                # cos branch
+                o_transformed[oi] = coeff * vcos[t]
+
+                # sin branch
+                oj = g * oi    # multiply the pauli's
+                sum!(sin_branch, oj * vsin[t] * coeff * 1im)
+
+            end
+        end
+        sum!(o_transformed, sin_branch) 
+        clip!(o_transformed, thresh=thresh)
+        n_ops[t] = length(o_transformed)
+    end
+
+    return o_transformed
+end
+
+

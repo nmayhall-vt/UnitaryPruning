@@ -84,3 +84,20 @@ function build_time_evolution_matrix(generators::Vector{Pauli{N}}, angles::Vecto
 
     return U 
 end
+
+function heisenberg(N, Jx, Jy, Jz) 
+    generators = Vector{Pauli{N}}([])
+    parameters = Vector{Float64}([])
+    # Loop over sites 
+    for i in 1:N-1
+        push!(generators, Pauli(N, X=[i, i + 1]))
+        push!(parameters, Jx)
+        push!(generators, Pauli(N, Y=[i, i + 1]))
+        push!(parameters, Jy)
+        push!(generators, Pauli(N, Z=[i, i + 1]))
+        push!(parameters, Jz)
+    end
+
+    return generators, parameters
+end
+
